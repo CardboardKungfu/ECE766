@@ -118,7 +118,7 @@ def challenge1d():
     from hw3_challenge1 import lineSegmentFinder
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
 
-    # hough_threshold = [??, ??, ??];
+    hough_threshold = [110, 100, 145]
 
     for i, fn in enumerate(img_list):
         orig_img = Image.open(f"data/{fn}")
