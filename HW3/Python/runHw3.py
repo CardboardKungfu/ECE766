@@ -87,7 +87,8 @@ def challenge1b():
         img = Image.open(f'outputs/edge_{fn}')
         img = np.array(img.convert('L'))  # Convert the image to grayscale
         
-        rho_num_bins = int(np.sqrt(img.shape[0]**2 + img.shape[1]**2) / rho_width) # determine number of rho bins based on diagonal length of img
+        # determine number of rho bins based on diagonal length of img
+        rho_num_bins = int(np.sqrt(img.shape[0]**2 + img.shape[1]**2) / rho_width)
 
         hough_accumulator = generateHoughAccumulator(img, theta_num_bins, rho_num_bins)
 
@@ -102,7 +103,7 @@ def challenge1c():
 
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
 
-    hough_threshold = [110, 100, 145]
+    hough_threshold = [115, 105, 145]
 
     for i, fn in enumerate(img_list):
         orig_img = Image.open(f"data/{fn}")
@@ -118,7 +119,7 @@ def challenge1d():
     from hw3_challenge1 import lineSegmentFinder
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
 
-    hough_threshold = [110, 100, 145]
+    hough_threshold = [110, 100, 150]
 
     for i, fn in enumerate(img_list):
         orig_img = Image.open(f"data/{fn}")
