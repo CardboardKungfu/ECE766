@@ -1,8 +1,8 @@
 from PIL import Image, ImageDraw
 import numpy as np
 
-theta_width = 2
-rho_width = 3
+theta_width = 1
+rho_width = 2
 
 def generateHoughAccumulator(edge_image: np.ndarray, theta_num_bins: int, rho_num_bins: int) -> np.ndarray:
     '''
@@ -14,9 +14,6 @@ def generateHoughAccumulator(edge_image: np.ndarray, theta_num_bins: int, rho_nu
     Returns:
         hough_accumulator: the Hough accumulator array.
     '''
-    # from skimage import feature
-    # canny_img = feature.canny(edge_image, sigma=1, low_threshold=50, high_threshold=100)
-    
     hough_acc = np.zeros((rho_num_bins, theta_num_bins), dtype=np.uint8)
 
     height = edge_image.shape[0]
@@ -32,7 +29,6 @@ def generateHoughAccumulator(edge_image: np.ndarray, theta_num_bins: int, rho_nu
     # scale it back to 255
     max_val = np.max(hough_acc)
     hough_acc = hough_acc * (255 / max_val)
-    # raise NotImplementedError
     return hough_acc
 
 
@@ -49,11 +45,12 @@ def lineFinder(orig_img: np.ndarray, hough_img: np.ndarray, hough_threshold: flo
     '''
 
     hough_peaks = hough_img > hough_threshold
+
     height = hough_peaks.shape[0]
     width = hough_peaks.shape[1]
 
     line_img = Image.fromarray(orig_img.astype(np.uint8)).convert('RGB')
-    draw = ImageDraw.Draw(line_img) 
+    draw = ImageDraw.Draw(line_img)
     
     for r in range(height):
         for c in range(width):

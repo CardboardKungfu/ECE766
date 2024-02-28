@@ -9,8 +9,8 @@ from runTests import run_tests
 
 from skimage import feature
 
-theta_width = 2
-rho_width = 3
+theta_width = 1
+rho_width = 2
 
 def runHw3():
     # runHw3 is the "main" interface that lets you execute all the 
@@ -91,19 +91,26 @@ def challenge1b():
         rho_num_bins = int(np.sqrt(img.shape[0]**2 + img.shape[1]**2) / rho_width)
 
         hough_accumulator = generateHoughAccumulator(img, theta_num_bins, rho_num_bins)
-
+        thresh_hough = hough_accumulator
         # We'd like to save the hough accumulator array as an image 
         # to visualize it. The values should be between 0 and 255 and 
         # the data type should be uint8.
         hough_accumulator = Image.fromarray(hough_accumulator.astype(np.uint8))
         hough_accumulator.save(f'outputs/accumulator_{fn}')
 
+        # for r in range(thresh_hough.shape[0]):
+        #     for c in range(thresh_hough.shape[1]):
+        #         thresh_hough[r, c] = thresh_hough[r, c] if thresh_hough[r, c] > 70 else 0
+
+        # thresh_hough = Image.fromarray(thresh_hough.astype(np.uint8))
+        # thresh_hough.save(f'outputs/thresh_accumulator_{fn}')
+
 def challenge1c():
     from hw3_challenge1 import lineFinder
 
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
 
-    hough_threshold = [115, 105, 145]
+    hough_threshold = [120, 90, 150]
 
     for i, fn in enumerate(img_list):
         orig_img = Image.open(f"data/{fn}")
@@ -119,7 +126,7 @@ def challenge1d():
     from hw3_challenge1 import lineSegmentFinder
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
 
-    hough_threshold = [110, 100, 150]
+    hough_threshold = [110, 100, 175]
 
     for i, fn in enumerate(img_list):
         orig_img = Image.open(f"data/{fn}")
@@ -127,7 +134,7 @@ def challenge1d():
 
         edge_img = Image.open(f'outputs/edge_{fn}')
         edge_img = np.array(edge_img.convert('L'))  # Convert the image to grayscale
-        
+
         hough_img = Image.open(f'outputs/accumulator_{fn}')
         hough_img = np.array(hough_img.convert('L'))  # Convert the image to grayscale
 
