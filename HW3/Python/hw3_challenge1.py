@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw
 import numpy as np
+from scipy.ndimage import correlate
 
 theta_width = 1
 rho_width = 2
@@ -15,7 +16,7 @@ def generateHoughAccumulator(edge_image: np.ndarray, theta_num_bins: int, rho_nu
         hough_accumulator: the Hough accumulator array.
     '''
     hough_acc = np.zeros((rho_num_bins, theta_num_bins), dtype=np.uint8)
-
+    
     height = edge_image.shape[0]
     width = edge_image.shape[1]
 
@@ -87,4 +88,5 @@ def lineSegmentFinder(orig_img: np.ndarray, edge_img: np.ndarray, hough_img: np.
     Returns:
         line_segement_img: PIL image with line segments drawn.
     '''
+
     raise NotImplementedError

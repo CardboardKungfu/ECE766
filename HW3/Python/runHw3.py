@@ -69,7 +69,7 @@ def challenge1a():
         # Apply edge detection to grayscale image
         gray_img = img.convert('L')
         gray_img = np.array(gray_img)
-        edge_img = feature.canny(gray_img, sigma=1, low_threshold=22, high_threshold=25)
+        edge_img = feature.canny(gray_img, sigma=2, low_threshold=22, high_threshold=25)
 
         # Save the edge detected image
         edge_img = Image.fromarray((edge_img * 255).astype(np.uint8))
@@ -91,7 +91,7 @@ def challenge1b():
         rho_num_bins = int(np.sqrt(img.shape[0]**2 + img.shape[1]**2) / rho_width)
 
         hough_accumulator = generateHoughAccumulator(img, theta_num_bins, rho_num_bins)
-        thresh_hough = hough_accumulator
+        # thresh_hough = hough_accumulator
         # We'd like to save the hough accumulator array as an image 
         # to visualize it. The values should be between 0 and 255 and 
         # the data type should be uint8.
@@ -110,7 +110,7 @@ def challenge1c():
 
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
 
-    hough_threshold = [120, 90, 150]
+    hough_threshold = [135, 135, 135]
 
     for i, fn in enumerate(img_list):
         orig_img = Image.open(f"data/{fn}")
