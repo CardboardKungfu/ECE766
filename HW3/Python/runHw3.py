@@ -147,7 +147,6 @@ def challenge1c():
         orig_img = Image.open(f"data/{fn}")
         orig_img = np.array(orig_img.convert('L'))  
 
-        # hough_img = Image.open(f'outputs/accumulator_{fn}')
         hough_img = Image.open(f'outputs/thresh_accumulator_{fn}')
         hough_img = np.array(hough_img.convert('L'))
 
