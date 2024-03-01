@@ -1,6 +1,5 @@
 from PIL import Image, ImageDraw
 import numpy as np
-import scipy
 import cv2 as cv
 
 theta_width = 1
@@ -104,23 +103,18 @@ def lineSegmentFinder(orig_img: np.ndarray, edge_arr: np.ndarray, hough_img: np.
     '''
     
     # Dilate edge image to capture all lines
-    # edge_arr = scipy.ndimage.binary_dilation(edge_arr)
     kernel = np.ones((5, 5), np.uint8)
 
     edge_arr = cv.dilate(edge_arr, kernel, iterations=1)
 
-    # Image.fromarray(edge_arr).show()
-    # # Increase mask dimensions to match RBG image
+    # Increase mask dimensions to match RBG image
     edge_arr_expanded = np.expand_dims(edge_arr, axis=-1)
     orig_img_expanded = np.expand_dims(orig_img, axis=-1)
     orig_img_expanded = np.repeat(orig_img_expanded, 3, axis=-1)
         
-    # # PIL expects a PIL image for a mask. It also doesn't accept bool types
+    # PIL expects a PIL image for a mask. It also doesn't accept bool types
 
-    # line_mask = Image.fromarray(edge_arr_expanded * blank_w_lines)
     line_mask = edge_arr_expanded * blank_w_lines
-    # line_mask.show()
-    # line_segment_img = orig_img_expanded + line_mask
     line_segment_img = orig_img_expanded
     for i in range(orig_img_expanded.shape[0]):
         for j in range(orig_img_expanded.shape[1]):

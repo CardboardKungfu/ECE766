@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 from runTests import run_tests
 
-from skimage import feature, filters
+from skimage import feature
 
 theta_width = 1
 rho_width = 1
@@ -166,7 +166,6 @@ def challenge1d():
         orig_img = np.array(orig_img.convert('L'))  # Convert the image to grayscale
 
         # Reapply edge detection for thicker masking
-        # edge_img = feature.canny(orig_img, sigma=2.4, low_threshold=22, high_threshold=25)
         edge_img = Image.open(f'outputs/edge_{fn}')
         edge_img = np.array(edge_img.convert('L'))  # Convert the image to grayscale
         
