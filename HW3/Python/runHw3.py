@@ -139,7 +139,7 @@ def challenge1b():
 def challenge1c():
     from hw3_challenge1 import lineFinder
     
-    hough_threshold = [142, 165, 245]
+    hough_threshold = [142, 165, 254]
 
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
 

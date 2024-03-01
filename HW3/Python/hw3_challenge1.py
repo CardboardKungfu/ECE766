@@ -124,5 +124,5 @@ def lineSegmentFinder(orig_img: np.ndarray, edge_arr: np.ndarray, hough_img: np.
                 line_segment_img[i, j, 2] = 0
 
     line_segment_img = Image.fromarray(line_segment_img)
-
+    line_segment_img.show()
     return line_segment_img
