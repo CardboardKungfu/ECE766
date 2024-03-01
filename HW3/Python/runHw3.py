@@ -10,7 +10,7 @@ from runTests import run_tests
 from skimage import feature
 
 theta_width = 1
-rho_width = 2
+rho_width = 1
 
 def runHw3():
     # runHw3 is the "main" interface that lets you execute all the 
@@ -62,7 +62,7 @@ def walkthrough1():
 
 # Tests for Challenge 1: Hough transform
 def challenge1a():
-    img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
+    img_list = ['test.png', 'hough_1.png', 'hough_2.png', 'hough_3.png']
     for i, fn in enumerate(img_list):
         img = Image.open(f"data/{fn}")
 
@@ -76,11 +76,46 @@ def challenge1a():
         edge_img.save(f'outputs/edge_{fn}')
 
 def challenge1b():
+    
+    ##############
+    def scale_min_max(image, part_size):
+        a, b = part_size
+        # Calculate the number of parts along each dimension
+        num_parts_x = image.shape[0] // a
+        num_parts_y = image.shape[1] // b
+        
+        # Initialize the scaled image
+        scaled_image = np.zeros_like(image)
+        
+        for i in range(num_parts_x):
+            for j in range(num_parts_y):
+                # Extract the current part
+                part = image[i*a:(i+1)*a, j*b:(j+1)*b]
+                
+                # Find the min and max values in the current part
+                min_val = np.min(part)
+                max_val = np.max(part)
+                
+                # Avoid division by zero in case min_val == max_val
+                if min_val == max_val:
+                    scaled_part = np.zeros_like(part)
+                else:
+                    # Scale the part
+                    scaled_part = (part - min_val) / (max_val - min_val) * 255
+                
+                # Place the scaled part back into the scaled image
+                scaled_image[i*a:(i+1)*a, j*b:(j+1)*b] = scaled_part
+        
+        return scaled_image
+        ##############
+
     from hw3_challenge1 import generateHoughAccumulator
 
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
 
-    theta_num_bins = int(180 / theta_width)
+    theta_num_bins = int(360 / theta_width)
+
+    hough_threshold = [55, 50, 50]
 
     for i, fn in enumerate(img_list):
         # Load the edge image from challenge1a
@@ -91,32 +126,33 @@ def challenge1b():
         rho_num_bins = int(np.sqrt(img.shape[0]**2 + img.shape[1]**2) / rho_width)
 
         hough_accumulator = generateHoughAccumulator(img, theta_num_bins, rho_num_bins)
-        # thresh_hough = hough_accumulator
+
+        hough2 = np.where(hough_accumulator > hough_threshold[i], hough_accumulator, 0)
+        part_size = (int(hough2.shape[0]/40),int(hough2.shape[1]/20))  # Size of the parts to split into
+
+        hough_scaled = scale_min_max(hough2, part_size)
+
         # We'd like to save the hough accumulator array as an image 
         # to visualize it. The values should be between 0 and 255 and 
         # the data type should be uint8.
         hough_accumulator = Image.fromarray(hough_accumulator.astype(np.uint8))
         hough_accumulator.save(f'outputs/accumulator_{fn}')
-
-        # for r in range(thresh_hough.shape[0]):
-        #     for c in range(thresh_hough.shape[1]):
-        #         thresh_hough[r, c] = thresh_hough[r, c] if thresh_hough[r, c] > 70 else 0
-
-        # thresh_hough = Image.fromarray(thresh_hough.astype(np.uint8))
-        # thresh_hough.save(f'outputs/thresh_accumulator_{fn}')
+        hough_scaled = Image.fromarray(hough_scaled.astype(np.uint8))
+        hough_scaled.save(f'outputs/thresh_accumulator_{fn}')
 
 def challenge1c():
     from hw3_challenge1 import lineFinder
+    
+    hough_threshold = [250, 240, 240]
 
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
-
-    hough_threshold = [135, 135, 135]
 
     for i, fn in enumerate(img_list):
         orig_img = Image.open(f"data/{fn}")
         orig_img = np.array(orig_img.convert('L'))  
 
-        hough_img = Image.open(f'outputs/accumulator_{fn}')
+        # hough_img = Image.open(f'outputs/accumulator_{fn}')
+        hough_img = Image.open(f'outputs/thresh_accumulator_{fn}')
         hough_img = np.array(hough_img.convert('L'))
 
         line_img = lineFinder(orig_img, hough_img, hough_threshold[i])
@@ -125,8 +161,8 @@ def challenge1c():
 def challenge1d():
     from hw3_challenge1 import lineSegmentFinder
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
-
-    hough_threshold = [110, 100, 175]
+    
+    hough_threshold = [200, 200, 200]
 
     for i, fn in enumerate(img_list):
         orig_img = Image.open(f"data/{fn}")

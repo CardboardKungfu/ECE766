@@ -1,9 +1,9 @@
 from PIL import Image, ImageDraw
 import numpy as np
-from scipy.ndimage import correlate
+import cv2 as cv
 
 theta_width = 1
-rho_width = 2
+rho_width = 1
 
 def generateHoughAccumulator(edge_image: np.ndarray, theta_num_bins: int, rho_num_bins: int) -> np.ndarray:
     '''
@@ -15,7 +15,7 @@ def generateHoughAccumulator(edge_image: np.ndarray, theta_num_bins: int, rho_nu
     Returns:
         hough_accumulator: the Hough accumulator array.
     '''
-    hough_acc = np.zeros((rho_num_bins, theta_num_bins), dtype=np.uint8)
+    hough_acc = np.zeros((rho_num_bins, theta_num_bins))
     
     height = edge_image.shape[0]
     width = edge_image.shape[1]
@@ -23,15 +23,27 @@ def generateHoughAccumulator(edge_image: np.ndarray, theta_num_bins: int, rho_nu
     for r in range(height):
         for c in range(width):
             if edge_image[r,c] != 0:
-                for theta in range(0, 180, theta_width):
+                for theta in range(0, 360, theta_width):
                     rho = c * np.sin(np.deg2rad(theta)) + r * np.cos(np.deg2rad(theta))
-                    hough_acc[int(rho / rho_width), int(theta / theta_width)] += 1
+                    # hough_acc[int(rho / rho_width), int(theta / theta_width)] += 1
+                    if int(rho / rho_width) == 0 or int(theta / theta_width) == 0 or int(rho / rho_width) == hough_acc.shape[0] - 1 or int(theta / theta_width) == hough_acc.shape[1] - 1:
+                        hough_acc[int(rho / rho_width), int(theta / theta_width)] += 1
+                    else:
+                        hough_acc[int(rho / rho_width), int(theta / theta_width)] += 1
+                        hough_acc[int(rho / rho_width) + 1, int(theta / theta_width)] += 0.2
+                        hough_acc[int(rho / rho_width) - 1, int(theta / theta_width)] += 0.2
+                        hough_acc[int(rho / rho_width), int(theta / theta_width) + 1] += 0.2
+                        hough_acc[int(rho / rho_width), int(theta / theta_width) - 1] += 0.2
+                        hough_acc[int(rho / rho_width) + 1, int(theta / theta_width) + 1] += 0.2
+                        hough_acc[int(rho / rho_width) + 1, int(theta / theta_width) - 1] += 0.2
+                        hough_acc[int(rho / rho_width) - 1, int(theta / theta_width) + 1] += 0.2
+                        hough_acc[int(rho / rho_width) - 1, int(theta / theta_width) - 1] += 0.2
 
     # scale it back to 255
     max_val = np.max(hough_acc)
     hough_acc = hough_acc * (255 / max_val)
-    return hough_acc
 
+    return hough_acc
 
 def lineFinder(orig_img: np.ndarray, hough_img: np.ndarray, hough_threshold: float):
     '''
@@ -44,7 +56,6 @@ def lineFinder(orig_img: np.ndarray, hough_img: np.ndarray, hough_threshold: flo
         line_img: PIL image with lines drawn.
 
     '''
-
     hough_peaks = hough_img > hough_threshold
 
     height = hough_peaks.shape[0]
@@ -72,7 +83,7 @@ def lineFinder(orig_img: np.ndarray, hough_img: np.ndarray, hough_threshold: flo
                     xp0 = (rho - (orig_img.shape[0] * np.cos(theta))) / np.sin(theta)
                     yp0 = orig_img.shape[0]
                     
-                draw.line((xp0, yp0, xp1, yp1), fill=128)
+                draw.line((xp0, yp0, xp1, yp1), fill=128, width=2)
 
     line_img.show()
     return  line_img
