@@ -7,7 +7,7 @@ import argparse
 import numpy as np
 from runTests import run_tests
 
-from skimage import feature
+from skimage import feature, filters
 
 theta_width = 1
 rho_width = 1
@@ -69,7 +69,7 @@ def challenge1a():
         # Apply edge detection to grayscale image
         gray_img = img.convert('L')
         gray_img = np.array(gray_img)
-        edge_img = feature.canny(gray_img, sigma=2, low_threshold=22, high_threshold=25)
+        edge_img = feature.canny(gray_img, sigma=2, low_threshold=0.04*np.max(gray_img), high_threshold=0.08*np.max(gray_img))
 
         # Save the edge detected image
         edge_img = Image.fromarray((edge_img * 255).astype(np.uint8))
@@ -114,7 +114,7 @@ def challenge1b():
 
     theta_num_bins = int(360 / theta_width)
 
-    hough_threshold = [60, 50, 50]
+    hough_threshold = [65, 50, 50]
 
     for i, fn in enumerate(img_list):
         # Load the edge image from challenge1a
@@ -127,7 +127,7 @@ def challenge1b():
         hough_accumulator = generateHoughAccumulator(img, theta_num_bins, rho_num_bins)
 
         hough2 = np.where(hough_accumulator > hough_threshold[i], hough_accumulator, 0)
-        part_size = (int(hough2.shape[0]/40),int(hough2.shape[1]/20))  # Size of the parts to split into
+        part_size = (int(hough2.shape[0]/20),int(hough2.shape[1]/10))  # Size of the parts to split into
         hough_scaled = scale_min_max(hough2, part_size)
 
         hough_accumulator = Image.fromarray(hough_accumulator.astype(np.uint8))
@@ -139,7 +139,7 @@ def challenge1b():
 def challenge1c():
     from hw3_challenge1 import lineFinder
     
-    hough_threshold = [250, 230, 235]
+    hough_threshold = [142, 165, 245]
 
     img_list = ['hough_1.png', 'hough_2.png', 'hough_3.png']
 
@@ -166,9 +166,9 @@ def challenge1d():
         orig_img = np.array(orig_img.convert('L'))  # Convert the image to grayscale
 
         # Reapply edge detection for thicker masking
-        edge_img = feature.canny(orig_img, sigma=3, low_threshold=22, high_threshold=25)
-        # edge_img = Image.open(f'outputs/edge_{fn}')
-        # edge_img = np.array(edge_img.convert('L'))  # Convert the image to grayscale
+        # edge_img = feature.canny(orig_img, sigma=2.4, low_threshold=22, high_threshold=25)
+        edge_img = Image.open(f'outputs/edge_{fn}')
+        edge_img = np.array(edge_img.convert('L'))  # Convert the image to grayscale
         
         # Bring in hough lines on black background
         blank_w_lines = Image.open(f'outputs/blank_w_lines_{fn}')
