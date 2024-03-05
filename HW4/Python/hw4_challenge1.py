@@ -12,7 +12,30 @@ def computeHomography(src_pts_nx2: np.ndarray, dest_pts_nx2: np.ndarray) -> np.n
     Returns:
         H_3x3: the homography matrix (3x3 numpy array).
     '''
-    raise NotImplementedError
+    
+    x_s, y_s = np.hsplit(src_pts_nx2, 2)
+    x_s, y_s = x_s.flatten(), y_s.flatten()
+    print(x_s)
+    print(y_s)
+    x_d, y_d = np.hsplit(dest_pts_nx2, 2)
+    x_d, y_d = x_d.flatten(), y_d.flatten()
+    print(x_d)
+    print(y_d)
+    A = np.array([
+        [x_s[0], y_s[0], 1, 0, 0, 0, -x_d[0] * x_s[0], -x_d[0] * y_s[0], -x_d[0]],
+        [0, 0, 0, x_s[0], y_s[0], 1, -y_d[0] * x_s[0], -y_d[0] * y_s[0], -y_d[0]],
+        [x_s[1], y_s[1], 1, 0, 0, 0, -x_d[1] * x_s[1], -x_d[1] * y_s[1], -x_d[1]],
+        [0, 0, 0, x_s[1], y_s[1], 1, -y_d[1] * x_s[1], -y_d[1] * y_s[1], -y_d[1]],
+        [x_s[2], y_s[2], 1, 0, 0, 0, -x_d[2] * x_s[2], -x_d[2] * y_s[2], -x_d[2]],
+        [0, 0, 0, x_s[2], y_s[2], 1, -y_d[2] * x_s[2], -y_d[2] * y_s[2], -y_d[2]],
+        [x_s[3], y_s[3], 1, 0, 0, 0, -x_d[3] * x_s[3], -x_d[3] * y_s[3], -x_d[3]],
+        [0, 0, 0, x_s[3], y_s[3], 1, -y_d[3] * x_s[3], -y_d[3] * y_s[3], -y_d[3]]
+        ])
+
+    eig_vals, eig_vecs = np.linalg.eig(A.T @ A)
+    H = eig_vecs[np.argmin(eig_vals)].reshape((3,3))
+
+    return H
 
 
 def applyHomography(H_3x3: np.ndarray, src_pts_nx2: np.ndarray) ->  np.ndarray:

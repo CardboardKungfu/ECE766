@@ -66,16 +66,16 @@ def challenge1a():
     # are nx2 matrices, where the first column contains
     # the x coordinates and the second column contains the y coordinates.
     # Either specify them here or use the ImageClicker class to select them
-    # src_pts_nx2 = np.array([[xs1, ys1], [xs2, ys2], [xs3, ys3], [xs4, ys4]])
-    # dest_pts_nx2 = np.array([[xd1, yd1], [xd2, yd2], [xd3, yd3], [xd4, yd4]])
-    clicker = ImageClicker('data/portrait.png', 4)
-    clicker.run()
-    src_pts_nx2 = clicker.get_points()
-    print("Source image points", src_pts_nx2)
-    clicker = ImageClicker('data/portrait_transformed.png', 4)
-    clicker.run()
-    dest_pts_nx2 = clicker.get_points()
-    print("Destination image points", src_pts_nx2)
+    src_pts_nx2 = np.array([[412, 312], [345, 312], [491, 351], [384, 572]])
+    dest_pts_nx2 = np.array([[334, 281], [270, 284], [423, 315], [304, 526]])
+    # clicker = ImageClicker('data/portrait.png', 4)
+    # clicker.run()
+    # src_pts_nx2 = clicker.get_points()
+    # print("Source image points", src_pts_nx2)
+    # clicker = ImageClicker('data/portrait_transformed.png', 4)
+    # clicker.run()
+    # dest_pts_nx2 = clicker.get_points()
+    # print("Destination image points", dest_pts_nx2)
 
     # H_3x3, a 3x3 matrix, is the estimated homography that 
     # transforms src_pts_nx2 to dest_pts_nx2. 
