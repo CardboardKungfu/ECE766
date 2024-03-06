@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageDraw
 import numpy as np
 from typing import Union, Tuple, List
 
@@ -12,29 +12,54 @@ def computeHomography(src_pts_nx2: np.ndarray, dest_pts_nx2: np.ndarray) -> np.n
     Returns:
         H_3x3: the homography matrix (3x3 numpy array).
     '''
-    
+
+    # Split points by column then flatten into a single list
     x_s, y_s = np.hsplit(src_pts_nx2, 2)
     x_s, y_s = x_s.flatten(), y_s.flatten()
-    print(x_s)
-    print(y_s)
+    # print(x_s)
+    # print(y_s)
+    
     x_d, y_d = np.hsplit(dest_pts_nx2, 2)
     x_d, y_d = x_d.flatten(), y_d.flatten()
-    print(x_d)
-    print(y_d)
-    A = np.array([
-        [x_s[0], y_s[0], 1, 0, 0, 0, -x_d[0] * x_s[0], -x_d[0] * y_s[0], -x_d[0]],
-        [0, 0, 0, x_s[0], y_s[0], 1, -y_d[0] * x_s[0], -y_d[0] * y_s[0], -y_d[0]],
-        [x_s[1], y_s[1], 1, 0, 0, 0, -x_d[1] * x_s[1], -x_d[1] * y_s[1], -x_d[1]],
-        [0, 0, 0, x_s[1], y_s[1], 1, -y_d[1] * x_s[1], -y_d[1] * y_s[1], -y_d[1]],
-        [x_s[2], y_s[2], 1, 0, 0, 0, -x_d[2] * x_s[2], -x_d[2] * y_s[2], -x_d[2]],
-        [0, 0, 0, x_s[2], y_s[2], 1, -y_d[2] * x_s[2], -y_d[2] * y_s[2], -y_d[2]],
-        [x_s[3], y_s[3], 1, 0, 0, 0, -x_d[3] * x_s[3], -x_d[3] * y_s[3], -x_d[3]],
-        [0, 0, 0, x_s[3], y_s[3], 1, -y_d[3] * x_s[3], -y_d[3] * y_s[3], -y_d[3]]
-        ])
+    # print(x_d)
+    # print(y_d)
+
+    # A = np.array([
+    #     [x_s[0], y_s[0], 1, 0, 0, 0, -x_d[0] * x_s[0], -x_d[0] * y_s[0], -x_d[0]],
+    #     [0, 0, 0, x_s[0], y_s[0], 1, -y_d[0] * x_s[0], -y_d[0] * y_s[0], -y_d[0]],
+    #     [x_s[1], y_s[1], 1, 0, 0, 0, -x_d[1] * x_s[1], -x_d[1] * y_s[1], -x_d[1]],
+    #     [0, 0, 0, x_s[1], y_s[1], 1, -y_d[1] * x_s[1], -y_d[1] * y_s[1], -y_d[1]],
+    #     [x_s[2], y_s[2], 1, 0, 0, 0, -x_d[2] * x_s[2], -x_d[2] * y_s[2], -x_d[2]],
+    #     [0, 0, 0, x_s[2], y_s[2], 1, -y_d[2] * x_s[2], -y_d[2] * y_s[2], -y_d[2]],
+    #     [x_s[3], y_s[3], 1, 0, 0, 0, -x_d[3] * x_s[3], -x_d[3] * y_s[3], -x_d[3]],
+    #     [0, 0, 0, x_s[3], y_s[3], 1, -y_d[3] * x_s[3], -y_d[3] * y_s[3], -y_d[3]]
+    #     ])
+
+    A = np.zeros((8, 9))
+    j = 0
+    for i in range(src_pts_nx2.shape[0]):
+        A[j,:] = [x_s[i], y_s[i], 1, 0, 0, 0, -x_d[i] * x_s[i], -x_d[i] * y_s[i], -x_d[i]]
+        A[j+1,:] = [0, 0, 0, x_s[i], y_s[i], 1, -y_d[i] * x_s[i], -y_d[i] * y_s[i], -y_d[i]]
+        j += 2
 
     eig_vals, eig_vecs = np.linalg.eig(A.T @ A)
-    H = eig_vecs[np.argmin(eig_vals)].reshape((3,3))
-
+    min_index = np.argmin(eig_vals)
+    H = eig_vecs[:, min_index].reshape((3,3))
+    # print("Homography Matrix:")
+    # print(H)
+    # print("Normalized Homography Matrix:")
+    # print(H / H[2,2])
+    
+    H = H / H[2,2] # normalize homography matrix
+    
+    # TEST CV Homography
+    # import cv2 as cv
+    # h, _ = cv.findHomography(src_pts_nx2, dest_pts_nx2)
+    # print("OpenCV FindHomography matrix: ")
+    # print(h)
+    
+    # raise NotImplementedError
+    # return h
     return H
 
 
@@ -47,7 +72,22 @@ def applyHomography(H_3x3: np.ndarray, src_pts_nx2: np.ndarray) ->  np.ndarray:
     Returns:
         dest_pts_nx2: the coordinates of the destination points (nx2 numpy array).
     '''
-    raise NotImplementedError
+    homo_src = np.insert(src_pts_nx2, 2, 1, axis=1)
+    print("Homogenized Source Points")
+    print(homo_src)
+    dest_mat = H_3x3 @ homo_src.T
+    print("Destination Points Matrix")
+    print(dest_mat)
+    z_tilde = dest_mat[-1]
+    print("Z Tilde")
+    print(z_tilde)
+    dest_points_homo = (dest_mat / z_tilde).T
+    dest_points = dest_points_homo[:, 0:2]
+    print("Destination Points")
+    print(dest_points)
+    
+    # raise NotImplementedError
+    return dest_points
 
 
 def showCorrespondence(img1: Image.Image, img2: Image.Image, pts1_nx2: np.ndarray, pts2_nx2: np.ndarray) -> Image.Image:
@@ -61,7 +101,23 @@ def showCorrespondence(img1: Image.Image, img2: Image.Image, pts1_nx2: np.ndarra
     Returns:
         result: image depicting the correspondences.
     '''
-    raise NotImplementedError
+
+    # width = img1.width + img2.width + 1  # Add 1 for the line width
+    width = img1.width + img2.width
+    height = max(img1.height, img2.height)
+
+    new_img = Image.new("RGB", (width, height))
+    new_img.paste(img1, (0, 0))
+    # new_img.paste(img2, (img1.width + 1, 0))  # +1 for the line width
+    new_img.paste(img2, (img1.width, 0))
+
+    draw = ImageDraw.Draw(new_img)
+    for src_pt, dest_pt in zip(pts1_nx2, pts2_nx2):
+        draw.line([tuple(src_pt), (dest_pt[0] + img1.width, dest_pt[1])], fill="red", width=1)
+    
+    new_img.show()
+    # raise NotImplementedError
+    return new_img
 
 # function [mask, result_img] = backwardWarpImg(src_img, resultToSrc_H, dest_canvas_width_height)
 

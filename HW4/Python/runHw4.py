@@ -55,10 +55,10 @@ def challenge1a():
     from hw4_challenge1 import computeHomography, applyHomography, showCorrespondence
 
     orig_img = Image.open('data/portrait.png')
-    orig_img = np.array(orig_img)
+    # orig_img = np.array(orig_img)
 
     warped_img = Image.open('data/portrait_transformed.png')
-    warped_img = np.array(warped_img)
+    # warped_img = np.array(warped_img)
 
     # Choose 4 corresponding points
     # src_pts_nx2 and dest_pts_nx2 are the coordinates of corresponding points 
@@ -85,7 +85,8 @@ def challenge1a():
     # test_pts_nx2 should be an nx2 matrix, where n is the number of points, the
     # first column contains the x coordinates and the second column contains
     # the y coordinates.
-    test_pts_nx2 = np.array([[xt1, yt1], [xt2, yt2], [xt3, yt3], [xt4, yt4]])
+    # test_pts_nx2 = np.array([[412, 312], [345, 312], [491, 351], [384, 572]])
+    test_pts_nx2 = np.array([[367, 577], [353, 398], [390, 314], [332, 315]])
 
     # Apply homography
     dest_pts_nx2 = applyHomography(H_3x3, test_pts_nx2)
@@ -94,7 +95,7 @@ def challenge1a():
     result_img = showCorrespondence(orig_img, warped_img, test_pts_nx2, dest_pts_nx2)
 
     # Save the result image
-    result_img = Image.fromarray(result_img.astype(np.uint8))
+    # result_img = Image.fromarray(result_img.astype(np.uint8))
     result_img.save('outputs/homography_result.png')
 
 
