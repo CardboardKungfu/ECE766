@@ -16,13 +16,9 @@ def computeHomography(src_pts_nx2: np.ndarray, dest_pts_nx2: np.ndarray) -> np.n
     # Split points by column then flatten into a single list
     x_s, y_s = np.hsplit(src_pts_nx2, 2)
     x_s, y_s = x_s.flatten(), y_s.flatten()
-    # print(x_s)
-    # print(y_s)
-    
+
     x_d, y_d = np.hsplit(dest_pts_nx2, 2)
     x_d, y_d = x_d.flatten(), y_d.flatten()
-    # print(x_d)
-    # print(y_d)
 
     # A = np.array([
     #     [x_s[0], y_s[0], 1, 0, 0, 0, -x_d[0] * x_s[0], -x_d[0] * y_s[0], -x_d[0]],
@@ -45,21 +41,9 @@ def computeHomography(src_pts_nx2: np.ndarray, dest_pts_nx2: np.ndarray) -> np.n
     eig_vals, eig_vecs = np.linalg.eig(A.T @ A)
     min_index = np.argmin(eig_vals)
     H = eig_vecs[:, min_index].reshape((3,3))
-    # print("Homography Matrix:")
-    # print(H)
-    # print("Normalized Homography Matrix:")
-    # print(H / H[2,2])
     
     H = H / H[2,2] # normalize homography matrix
-    
-    # TEST CV Homography
-    # import cv2 as cv
-    # h, _ = cv.findHomography(src_pts_nx2, dest_pts_nx2)
-    # print("OpenCV FindHomography matrix: ")
-    # print(h)
-    
-    # raise NotImplementedError
-    # return h
+
     return H
 
 
@@ -73,19 +57,11 @@ def applyHomography(H_3x3: np.ndarray, src_pts_nx2: np.ndarray) ->  np.ndarray:
         dest_pts_nx2: the coordinates of the destination points (nx2 numpy array).
     '''
     homo_src = np.insert(src_pts_nx2, 2, 1, axis=1)
-    print("Homogenized Source Points")
-    print(homo_src)
     dest_mat = H_3x3 @ homo_src.T
-    print("Destination Points Matrix")
-    print(dest_mat)
     z_tilde = dest_mat[-1]
-    print("Z Tilde")
-    print(z_tilde)
     dest_points_homo = (dest_mat / z_tilde).T
     dest_points = dest_points_homo[:, 0:2]
-    print("Destination Points")
-    print(dest_points)
-    
+
     # raise NotImplementedError
     return dest_points
 
@@ -102,13 +78,11 @@ def showCorrespondence(img1: Image.Image, img2: Image.Image, pts1_nx2: np.ndarra
         result: image depicting the correspondences.
     '''
 
-    # width = img1.width + img2.width + 1  # Add 1 for the line width
     width = img1.width + img2.width
     height = max(img1.height, img2.height)
 
     new_img = Image.new("RGB", (width, height))
     new_img.paste(img1, (0, 0))
-    # new_img.paste(img2, (img1.width + 1, 0))  # +1 for the line width
     new_img.paste(img2, (img1.width, 0))
 
     draw = ImageDraw.Draw(new_img)
@@ -118,8 +92,6 @@ def showCorrespondence(img1: Image.Image, img2: Image.Image, pts1_nx2: np.ndarra
     new_img.show()
     # raise NotImplementedError
     return new_img
-
-# function [mask, result_img] = backwardWarpImg(src_img, resultToSrc_H, dest_canvas_width_height)
 
 def backwardWarpImg(src_img: Image.Image, destToSrc_H: np.ndarray, canvas_shape: Union[Tuple, List]) -> Tuple[Image.Image, Image.Image]:
     '''
