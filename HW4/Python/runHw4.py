@@ -140,38 +140,40 @@ def challenge1b():
 def challenge1c():
     from helpers import genSIFTMatches
     from hw4_challenge1 import showCorrespondence, runRANSAC
-    img_src = np.array(Image.open('data/mountain_left.png').convert('RGB'))
-    img_dst = np.array(Image.open('data/mountain_center.png').convert('RGB'))
+    img_src = Image.open('data/mountain_left.png').convert('RGB')
+    img_dst = Image.open('data/mountain_center.png').convert('RGB')
+    img_src_np = np.array(img_src)
+    img_dst_np = np.array(img_dst)
 
-    xs, xd = genSIFTMatches(img_src, img_dst)
-    # xs and xd are the centers of matched frames
-    # xs and xd are nx2 matrices, where the first column contains the x
+    x_s, x_d = genSIFTMatches(img_src_np, img_dst_np)
+    # x_s and x_d are the centers of matched frames
+    # x_s and x_d are nx2 matrices, where the first column contains the x
     # coordinates and the second column contains the y coordinates
 
     # Assuming showCorrespondence is a function defined elsewhere in your code
-    before_img = showCorrespondence(img_src, img_dst, xs, xd)
-    before_img = Image.fromarray((before_img * 255).astype(np.uint8))
-    before_img.save('outputs/before_ransac.png')
+    # before_img = showCorrespondence(img_src, img_dst, x_s, x_d)
+    # before_img.save('outputs/before_ransac.png')
 
-    plt.figure()
-    plt.imshow(before_img)
-    plt.title('Before RANSAC')
-    plt.show()
+    # plt.figure()
+    # plt.imshow(before_img)
+    # plt.title('Before RANSAC')
+    # plt.show()
 
     # Use RANSAC to reject outliers
-    # ransac_n = ??  # Max number of iterations
-    # ransac_eps = ??  # Acceptable alignment error 
+    ransac_n = 100  # Max number of iterations
+    ransac_eps = 80  # Acceptable alignment error 
 
     # Assuming runRANSAC is a function defined elsewhere in your code
-    inliers_id, _ = runRANSAC(xs, xd, ransac_n, ransac_eps)
-    after_img = showCorrespondence(img_src, img_dst, xs[inliers_id, :], xd[inliers_id, :])
-    after_img = Image.fromarray((after_img * 255).astype(np.uint8))
+    inliers_id, _ = runRANSAC(x_s, x_d, ransac_n, ransac_eps)
+    # print(inliers_id.astype(int))
+    after_img = showCorrespondence(img_src, img_dst, x_s[inliers_id.astype(int), :], x_d[inliers_id.astype(int), :])
+    # after_img = Image.fromarray((after_img * 255).astype(np.uint8))
     after_img.save('outputs/after_ransac.png')
 
-    plt.figure()
-    plt.imshow(after_img)
-    plt.title('After RANSAC')
-    plt.show()
+    # plt.figure()
+    # plt.imshow(after_img)
+    # plt.title('After RANSAC')
+    # plt.show()
 
 # Test image blending
 def challenge1d():

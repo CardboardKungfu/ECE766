@@ -20,18 +20,7 @@ def computeHomography(src_pts_nx2: np.ndarray, dest_pts_nx2: np.ndarray) -> np.n
     x_d, y_d = np.hsplit(dest_pts_nx2, 2)
     x_d, y_d = x_d.flatten(), y_d.flatten()
 
-    # A = np.array([
-    #     [x_s[0], y_s[0], 1, 0, 0, 0, -x_d[0] * x_s[0], -x_d[0] * y_s[0], -x_d[0]],
-    #     [0, 0, 0, x_s[0], y_s[0], 1, -y_d[0] * x_s[0], -y_d[0] * y_s[0], -y_d[0]],
-    #     [x_s[1], y_s[1], 1, 0, 0, 0, -x_d[1] * x_s[1], -x_d[1] * y_s[1], -x_d[1]],
-    #     [0, 0, 0, x_s[1], y_s[1], 1, -y_d[1] * x_s[1], -y_d[1] * y_s[1], -y_d[1]],
-    #     [x_s[2], y_s[2], 1, 0, 0, 0, -x_d[2] * x_s[2], -x_d[2] * y_s[2], -x_d[2]],
-    #     [0, 0, 0, x_s[2], y_s[2], 1, -y_d[2] * x_s[2], -y_d[2] * y_s[2], -y_d[2]],
-    #     [x_s[3], y_s[3], 1, 0, 0, 0, -x_d[3] * x_s[3], -x_d[3] * y_s[3], -x_d[3]],
-    #     [0, 0, 0, x_s[3], y_s[3], 1, -y_d[3] * x_s[3], -y_d[3] * y_s[3], -y_d[3]]
-    #     ])
-
-    A = np.zeros((8, 9))
+    A = np.zeros((src_pts_nx2.shape[0] * 2, 9))
     j = 0
     for i in range(src_pts_nx2.shape[0]):
         A[j,:] = [x_s[i], y_s[i], 1, 0, 0, 0, -x_d[i] * x_s[i], -x_d[i] * y_s[i], -x_d[i]]
@@ -45,7 +34,6 @@ def computeHomography(src_pts_nx2: np.ndarray, dest_pts_nx2: np.ndarray) -> np.n
     H = H / H[2,2] # normalize homography matrix
 
     return H
-
 
 def applyHomography(H_3x3: np.ndarray, src_pts_nx2: np.ndarray) ->  np.ndarray:
     '''
@@ -64,7 +52,6 @@ def applyHomography(H_3x3: np.ndarray, src_pts_nx2: np.ndarray) ->  np.ndarray:
 
     # raise NotImplementedError
     return dest_points
-
 
 def showCorrespondence(img1: Image.Image, img2: Image.Image, pts1_nx2: np.ndarray, pts2_nx2: np.ndarray) -> Image.Image:
     '''
@@ -123,7 +110,6 @@ def backwardWarpImg(src_img: np.ndarray, destToSrc_H: np.ndarray, canvas_shape: 
     # raise NotImplementedError
     return blank_mask, canvas
 
-
 def blendImagePair(img1: List[Image.Image], mask1: List[Image.Image], img2: Image.Image, mask2: Image.Image, mode: str) -> Image.Image:
     '''
     Blend the warped images based on the masks.
@@ -138,7 +124,7 @@ def blendImagePair(img1: List[Image.Image], mask1: List[Image.Image], img2: Imag
     '''
     raise NotImplementedError
 
-def runRANSAC(src_pt: np.ndarray, dest_pt: np.ndarray, ransac_n: int, eps: float) -> Tuple[np.ndarray, np.ndarray]:
+def runRANSAC(src_pts: np.ndarray, dest_pts: np.ndarray, ransac_n: int, eps: float) -> Tuple[np.ndarray, np.ndarray]:
     '''
     Run the RANSAC algorithm to find the inliers between the source and
     destination points.
@@ -151,7 +137,73 @@ def runRANSAC(src_pt: np.ndarray, dest_pt: np.ndarray, ransac_n: int, eps: float
         inliers_id: the indices of the inliers (kx1 numpy array).
         H: the homography matrix (3x3 numpy array).
     '''
+    num_samples = 4
+    for _ in range(ransac_n):
+        idx = np.random.choice(np.arange(len(src_pts)), num_samples, replace=False)
+        src_samples = src_pts[idx]
+        dest_samples = dest_pts[idx]
+
     raise NotImplementedError
+
+# def runRANSAC(src_pts: np.ndarray, dest_pts: np.ndarray, ransac_n: int, eps: float) -> Tuple[np.ndarray, np.ndarray]:
+#     '''
+#     Run the RANSAC algorithm to find the inliers between the source and
+#     destination points.
+#     Arguments:
+#         src_pt: the coordinates of the source points (nx2 numpy array).
+#         dest_pt: the coordinates of the destination points (nx2 numpy array).
+#         ransac_n: the number of iterations to run RANSAC.
+#         eps: the threshold for considering a point to be an inlier.
+#     Returns:
+#         inliers_id: the indices of the inliers (kx1 numpy array).
+#         H: the homography matrix (3x3 numpy array).
+#     '''
+
+#     sample_size = 4
+#     best_H = None
+#     max_inliers = 0
+#     inlier_indices = np.empty(len(src_pts))
+#     # Go from nx2 -> nx3
+    
+#     sample_indices = np.arange(len(src_pts))
+#     for _ in range(ransac_n):
+#         idx = np.random.choice(sample_indices, sample_size, replace=False)
+#         src_samples = src_pts[idx]
+#         dest_samples = dest_pts[idx]
+
+#         cand_H = computeHomography(src_samples, dest_samples) # compute candidate H
+
+#         error = calculate_error(src_pts, dest_pts, cand_H)
+
+#         # Count inliers
+#         inliers = []
+#         for i, elem in enumerate(error):
+#             if elem[0] < eps and elem[1] < eps:
+#                 inliers.append(i)
+                
+#         # inliers = np.where(np.all(error[:, 0] < eps and error[:, 1] < eps))[0]
+#         # inliers = np.all(error < eps, axis=1)
+#         if len(inliers) > max_inliers:
+#             max_inliers = len(inliers)
+#             inlier_indices = inliers
+#             best_H = cand_H
+    
+#     # raise NotImplementedError
+#     return np.asarray(inlier_indices), best_H
+    
+#         # dest_l2 = np.sqrt((dest_pts[:, 0] - cand_dest[:, 1])**2 + (dest_pts[:, 1] - cand_dest[:, 0])**2) # Take the L2 norm of each row
+        
+#         # cand_indices = np.asarray(np.any(dest_l2 < eps, axis=0)).nonzero()
+#         # # print(cand_indices)
+#         # curr_count = np.sum(cand_indices)
+        
+#         # if curr_count > max_inliers:
+#         #     max_inliers = curr_count
+#         #     best_H = cand_H
+#         #     inlier_indices = cand_indices
+#     # print(inlier_indices)
+#     return np.unique(inlier_indices), best_H
+
 
 def stitchImg(*args: Image.Image) -> Image.Image:
     '''
