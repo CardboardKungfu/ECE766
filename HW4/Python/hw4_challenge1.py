@@ -119,14 +119,9 @@ def backwardWarpImg(src_img: np.ndarray, destToSrc_H: np.ndarray, canvas_shape: 
             canvas[x_d, y_d] = src_img[x_s.astype(int), y_s.astype(int)]
 
     blank_mask = canvas > 0
-    import matplotlib.pyplot as plt
-    plt.figure()
-    plt.imshow(canvas)
-    # plt.title('Van Gogh in Osaka')
-    plt.show()
-
+    
+    # raise NotImplementedError
     return blank_mask, canvas
-    raise NotImplementedError
 
 
 def blendImagePair(img1: List[Image.Image], mask1: List[Image.Image], img2: Image.Image, mask2: Image.Image, mode: str) -> Image.Image:
