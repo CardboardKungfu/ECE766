@@ -107,25 +107,27 @@ def challenge1b():
     portrait_img = np.array(Image.open('data/portrait_small.png')) / 255.0
 
     # Estimate homography
-    # bg_pts = np.array([[xs1, ys1], [xs2, ys2], [xs3, ys3], [xs4, ys4]])
-    # portrait_pts = np.array([[xd1, yd1], [xd2, yd2], [xd3, yd3], [xd4, yd4]])
-    clicker = ImageClicker('data/Osaka.png', 4)
-    clicker.run()
-    bg_pts = clicker.get_points()
-    print("Background points", bg_pts)
-    clicker = ImageClicker('data/portrait_small.png', 4)
-    clicker.run()
-    portrait_pts = clicker.get_points()
-    print("Portrait points", bg_pts)
+    bg_pts = np.array([[100, 18], [275, 69], [83, 438], [284, 423]])
+    portrait_pts = np.array([[3, 2], [325, 2], [2, 398], [326, 399]])
+    # clicker = ImageClicker('data/Osaka.png', 4)
+    # clicker.run()
+    # bg_pts = clicker.get_points()
+    # print("Background points", bg_pts)
+    # clicker = ImageClicker('data/portrait_small.png', 4)
+    # clicker.run()
+    # portrait_pts = clicker.get_points()
+    # print("Portrait points", portrait_pts)
     H_3x3 = computeHomography(portrait_pts, bg_pts)
 
     # Warp the portrait image
-    dest_canvas_shape = bg_img.shape[:2]
+    # dest_canvas_shape = bg_img.shape[:2]
+    dest_canvas_shape = bg_img.shape
     mask, dest_img = backwardWarpImg(portrait_img, np.linalg.inv(H_3x3), dest_canvas_shape)
     # mask should be of the type logical
     mask = ~mask
     # Superimpose the image
-    result = bg_img * np.stack([mask, mask, mask], axis=2) + dest_img
+    # result = bg_img * np.stack([mask, mask, mask], axis=2) + dest_img
+    result = bg_img * mask + dest_img
     result = Image.fromarray((result * 255).astype(np.uint8))
     result.save('outputs/Van_Gogh_in_Osaka.png')
 

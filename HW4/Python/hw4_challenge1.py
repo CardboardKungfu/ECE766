@@ -93,7 +93,7 @@ def showCorrespondence(img1: Image.Image, img2: Image.Image, pts1_nx2: np.ndarra
     # raise NotImplementedError
     return new_img
 
-def backwardWarpImg(src_img: Image.Image, destToSrc_H: np.ndarray, canvas_shape: Union[Tuple, List]) -> Tuple[Image.Image, Image.Image]:
+def backwardWarpImg(src_img: np.ndarray, destToSrc_H: np.ndarray, canvas_shape: Union[Tuple, List]) -> Tuple[np.ndarray, np.ndarray]:
     '''
     Backward warp the source image to the destination canvas based on the
     homography given by destToSrc_H. 
@@ -107,6 +107,25 @@ def backwardWarpImg(src_img: Image.Image, destToSrc_H: np.ndarray, canvas_shape:
         dest_mask: a mask indicating sourced pixels. pixels within the
             source image are 1, pixels outside are 0.
     '''
+    canvas = np.zeros(canvas_shape, dtype=src_img.dtype)
+    src_height, src_width = src_img.shape[:2]
+    for x_d in range(canvas.shape[0]):
+        for y_d in range(canvas.shape[1]):
+            homo_coords = destToSrc_H @ np.array([y_d, x_d, 1]).reshape((3,1))
+            y_s, x_s, _ = (homo_coords / homo_coords[2]).flatten()
+            # Ignore if transformed pixel leads us outside of our original image, 
+            if x_s < 0 or y_s < 0 or x_s > src_height or y_s > src_width:
+                continue
+            canvas[x_d, y_d] = src_img[x_s.astype(int), y_s.astype(int)]
+
+    blank_mask = canvas > 0
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.imshow(canvas)
+    # plt.title('Van Gogh in Osaka')
+    plt.show()
+
+    return blank_mask, canvas
     raise NotImplementedError
 
 
