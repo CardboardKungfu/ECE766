@@ -137,72 +137,70 @@ def runRANSAC(src_pts: np.ndarray, dest_pts: np.ndarray, ransac_n: int, eps: flo
         inliers_id: the indices of the inliers (kx1 numpy array).
         H: the homography matrix (3x3 numpy array).
     '''
-    num_samples = 4
+
+    # Stabilize the ransac results
+    np.random.seed(1)
+
+    sample_size = 4
+    best_H = None
+    max_inliers = 0
+    inlier_indices = None
+    # Go from nx2 -> nx3
+    sample_indices = np.arange(len(src_pts))
     for _ in range(ransac_n):
-        idx = np.random.choice(np.arange(len(src_pts)), num_samples, replace=False)
-        src_samples = src_pts[idx]
-        dest_samples = dest_pts[idx]
+        indices = np.random.choice(sample_indices, sample_size, replace=False)
+        src_sample = src_pts[indices]
+        dest_sample = dest_pts[indices]
 
-    raise NotImplementedError
+        cand_H = computeHomography(src_sample, dest_sample)
+        cand_dest = applyHomography(cand_H, src_pts)
 
-# def runRANSAC(src_pts: np.ndarray, dest_pts: np.ndarray, ransac_n: int, eps: float) -> Tuple[np.ndarray, np.ndarray]:
-#     '''
-#     Run the RANSAC algorithm to find the inliers between the source and
-#     destination points.
-#     Arguments:
-#         src_pt: the coordinates of the source points (nx2 numpy array).
-#         dest_pt: the coordinates of the destination points (nx2 numpy array).
-#         ransac_n: the number of iterations to run RANSAC.
-#         eps: the threshold for considering a point to be an inlier.
-#     Returns:
-#         inliers_id: the indices of the inliers (kx1 numpy array).
-#         H: the homography matrix (3x3 numpy array).
-#     '''
+        distances = np.linalg.norm(cand_dest - dest_pts, axis=1)
 
-#     sample_size = 4
-#     best_H = None
-#     max_inliers = 0
-#     inlier_indices = np.empty(len(src_pts))
-#     # Go from nx2 -> nx3
-    
-#     sample_indices = np.arange(len(src_pts))
-#     for _ in range(ransac_n):
-#         idx = np.random.choice(sample_indices, sample_size, replace=False)
-#         src_samples = src_pts[idx]
-#         dest_samples = dest_pts[idx]
+        inlier_indices = np.where(distances < eps)[0]
+        if len(inlier_indices) > max_inliers:
+            max_inliers = len(inlier_indices)
+            inlier_indices = inlier_indices
+            best_H = cand_H
 
-#         cand_H = computeHomography(src_samples, dest_samples) # compute candidate H
+    # raise NotImplementedError
+    return inlier_indices, best_H
+        # idx = np.random.choice(sample_indices, sample_size, replace=False)
+        # src_samples = src_pts[idx]
+        # dest_samples = dest_pts[idx]
 
-#         error = calculate_error(src_pts, dest_pts, cand_H)
+        # cand_H = computeHomography(src_samples, dest_samples) # compute candidate H
 
-#         # Count inliers
-#         inliers = []
-#         for i, elem in enumerate(error):
-#             if elem[0] < eps and elem[1] < eps:
-#                 inliers.append(i)
+        # error = calculate_error(src_pts, dest_pts, cand_H)
+
+        # # Count inliers
+        # inliers = []
+        # for i, elem in enumerate(error):
+        #     if elem[0] < eps and elem[1] < eps:
+        #         inliers.append(i)
                 
-#         # inliers = np.where(np.all(error[:, 0] < eps and error[:, 1] < eps))[0]
-#         # inliers = np.all(error < eps, axis=1)
-#         if len(inliers) > max_inliers:
-#             max_inliers = len(inliers)
-#             inlier_indices = inliers
-#             best_H = cand_H
+        # # inliers = np.where(np.all(error[:, 0] < eps and error[:, 1] < eps))[0]
+        # # inliers = np.all(error < eps, axis=1)
+        # if len(inliers) > max_inliers:
+        #     max_inliers = len(inliers)
+        #     inlier_indices = inliers
+        #     best_H = cand_H
     
-#     # raise NotImplementedError
-#     return np.asarray(inlier_indices), best_H
+    # raise NotImplementedError
+    # return np.asarray(inlier_indices), best_H
     
-#         # dest_l2 = np.sqrt((dest_pts[:, 0] - cand_dest[:, 1])**2 + (dest_pts[:, 1] - cand_dest[:, 0])**2) # Take the L2 norm of each row
+        # dest_l2 = np.sqrt((dest_pts[:, 0] - cand_dest[:, 1])**2 + (dest_pts[:, 1] - cand_dest[:, 0])**2) # Take the L2 norm of each row
         
-#         # cand_indices = np.asarray(np.any(dest_l2 < eps, axis=0)).nonzero()
-#         # # print(cand_indices)
-#         # curr_count = np.sum(cand_indices)
+        # cand_indices = np.asarray(np.any(dest_l2 < eps, axis=0)).nonzero()
+        # # print(cand_indices)
+        # curr_count = np.sum(cand_indices)
         
-#         # if curr_count > max_inliers:
-#         #     max_inliers = curr_count
-#         #     best_H = cand_H
-#         #     inlier_indices = cand_indices
-#     # print(inlier_indices)
-#     return np.unique(inlier_indices), best_H
+        # if curr_count > max_inliers:
+        #     max_inliers = curr_count
+        #     best_H = cand_H
+        #     inlier_indices = cand_indices
+    # print(inlier_indices)
+    # return np.unique(inlier_indices), best_H
 
 
 def stitchImg(*args: Image.Image) -> Image.Image:
