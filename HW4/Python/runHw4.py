@@ -146,6 +146,8 @@ def challenge1c():
     img_dst_np = np.array(img_dst)
 
     x_s, x_d = genSIFTMatches(img_src_np, img_dst_np)
+    # genSIFT returns (y,x) not (x,y), so flip them around
+    x_s, x_d = x_s[:, [1, 0]], x_d[:, [1, 0]]
     # x_s and x_d are the centers of matched frames
     # x_s and x_d are nx2 matrices, where the first column contains the x
     # coordinates and the second column contains the y coordinates
@@ -154,27 +156,25 @@ def challenge1c():
     before_img = showCorrespondence(img_src, img_dst, x_s, x_d)
     before_img.save('outputs/before_ransac.png')
 
-    plt.figure()
-    plt.imshow(before_img)
-    plt.title('Before RANSAC')
-    plt.show()
+    # plt.figure()
+    # plt.imshow(before_img)
+    # plt.title('Before RANSAC')
+    # plt.show()
 
     # Use RANSAC to reject outliers
-    ransac_n = 300 # Max number of iterations
+    ransac_n = 100 # Max number of iterations
     ransac_eps = 1.2  # Acceptable alignment error 
 
     # Assuming runRANSAC is a function defined elsewhere in your code
-    # genSIFT returns (y,x) not (x,y), so flip them around
-    x_s, x_d = np.fliplr(x_s),np.fliplr(x_d)
     inliers_id, _ = runRANSAC(x_s, x_d, ransac_n, ransac_eps)
     after_img = showCorrespondence(img_src, img_dst, x_s[inliers_id.astype(int), :], x_d[inliers_id.astype(int), :])
     # after_img = Image.fromarray((after_img * 255).astype(np.uint8))
     after_img.save('outputs/after_ransac.png')
 
-    plt.figure()
-    plt.imshow(after_img)
-    plt.title('After RANSAC')
-    plt.show()
+    # plt.figure()
+    # plt.imshow(after_img)
+    # plt.title('After RANSAC')
+    # plt.show()
 
 # Test image blending
 def challenge1d():
@@ -187,11 +187,11 @@ def challenge1d():
     horse, horse_mask = horse[:, :, :3], horse[:, :, 3]
 
     blended_result = blendImagePair(fish, fish_mask, horse, horse_mask, 'blend')
-    blended_result = Image.fromarray((blended_result * 255).astype(np.uint8))
+    blended_result = Image.fromarray((blended_result).astype(np.uint8))
     blended_result.save('outputs/blended_result.png')
 
     overlay_result = blendImagePair(fish, fish_mask, horse, horse_mask, 'overlay')
-    overlay_result = Image.fromarray((overlay_result * 255).astype(np.uint8))
+    overlay_result = Image.fromarray((overlay_result).astype(np.uint8))
     overlay_result.save('outputs/overlay_result.png')
 
     fig, axs = plt.subplots(2, 2, figsize=(10, 10))

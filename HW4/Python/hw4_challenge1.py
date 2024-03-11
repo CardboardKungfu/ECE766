@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw
 import numpy as np
+from scipy import ndimage
 from typing import Union, Tuple, List
 
 
@@ -98,8 +99,8 @@ def backwardWarpImg(src_img: np.ndarray, destToSrc_H: np.ndarray, canvas_shape: 
     src_height, src_width = src_img.shape[:2]
     for x_d in range(canvas.shape[0]):
         for y_d in range(canvas.shape[1]):
-            homo_coords = destToSrc_H @ np.array([y_d, x_d, 1]).reshape((3,1))
-            y_s, x_s, _ = (homo_coords / homo_coords[2]).flatten()
+            homo_coords = destToSrc_H @ np.array([x_d, y_d, 1]).reshape((3,1))
+            x_s, y_s, _ = (homo_coords / homo_coords[2]).flatten()
             # Ignore if transformed pixel leads us outside of our original image, 
             if x_s < 0 or y_s < 0 or x_s > src_height or y_s > src_width:
                 continue
@@ -110,7 +111,7 @@ def backwardWarpImg(src_img: np.ndarray, destToSrc_H: np.ndarray, canvas_shape: 
     # raise NotImplementedError
     return blank_mask, canvas
 
-def blendImagePair(img1: List[Image.Image], mask1: List[Image.Image], img2: Image.Image, mask2: Image.Image, mode: str) -> Image.Image:
+def blendImagePair(img1: np.ndarray, mask1: np.ndarray, img2: np.ndarray, mask2: np.ndarray, mode: str) -> np.ndarray:
     '''
     Blend the warped images based on the masks.
     Arguments:
@@ -122,7 +123,31 @@ def blendImagePair(img1: List[Image.Image], mask1: List[Image.Image], img2: Imag
     Returns:
         out_img: blended image.
     '''
-    raise NotImplementedError
+    out_img = np.zeros(img1.shape)
+
+    if mode == "overlay":
+        mask1 = mask1 > 0
+        mask2 = mask2 > 0
+        out_img = out_img + img1 * ~mask2[:, :, np.newaxis] + img2
+        out_img = out_img.astype(np.uint8)
+        
+    elif mode == "blend":
+        mask1 = mask1 / 255
+        mask2 = mask2 / 255
+
+        img1_weighted = ndimage.distance_transform_edt(mask1)
+        img1_weighted[img1_weighted == 0] = 0.000001
+
+        img2_weighted = ndimage.distance_transform_edt(mask2)
+        img2_weighted[img2_weighted == 0] = 0.000001
+
+        image_blended = (img1 * img1_weighted[:, :, np.newaxis] + img2 * img2_weighted[:, :, np.newaxis]) / (img1_weighted + img2_weighted)[:, :, np.newaxis]
+        out_img = image_blended.astype(np.uint8)
+    else:
+        raise ValueError("Invalid blending mode. Choose 'overlay' or 'blend'.")
+
+    # raise NotImplementedError
+    return out_img
 
 def runRANSAC(src_pts: np.ndarray, dest_pts: np.ndarray, ransac_n: int, eps: float) -> Tuple[np.ndarray, np.ndarray]:
     '''
