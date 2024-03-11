@@ -98,7 +98,6 @@ def challenge1a():
     # result_img = Image.fromarray(result_img.astype(np.uint8))
     result_img.save('outputs/homography_result.png')
 
-
 # Test wrapping
 def challenge1b(): 
     from helpers import ImageClicker
@@ -162,7 +161,7 @@ def challenge1c():
     # plt.show()
 
     # Use RANSAC to reject outliers
-    ransac_n = 100 # Max number of iterations
+    ransac_n = 50 # Max number of iterations
     ransac_eps = 1.2  # Acceptable alignment error 
 
     # Assuming runRANSAC is a function defined elsewhere in your code
@@ -210,7 +209,7 @@ def challenge1e():
     img_right = np.array(Image.open('data/mountain_right.png')) / 255.0
 
     # You are free to change the order of input arguments
-    stitched_img = stitchImg(img_center, img_left, img_right)
+    stitched_img = stitchImg(img_left, img_center, img_right)
 
     # Save the stitched image
     stitched_img = Image.fromarray((stitched_img * 255).astype(np.uint8))

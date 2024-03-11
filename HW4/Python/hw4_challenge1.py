@@ -101,7 +101,7 @@ def backwardWarpImg(src_img: np.ndarray, destToSrc_H: np.ndarray, canvas_shape: 
         for y_d in range(canvas.shape[1]):
             homo_coords = destToSrc_H @ np.array([x_d, y_d, 1]).reshape((3,1))
             x_s, y_s, _ = (homo_coords / homo_coords[2]).flatten()
-            # Ignore if transformed pixel leads us outside of our original image, 
+            # Ignore if transformed pixel leads us outside of our original image
             if x_s < 0 or y_s < 0 or x_s > src_height or y_s > src_width:
                 continue
             canvas[x_d, y_d] = src_img[x_s.astype(int), y_s.astype(int)]
@@ -182,53 +182,16 @@ def runRANSAC(src_pts: np.ndarray, dest_pts: np.ndarray, ransac_n: int, eps: flo
 
         distances = np.linalg.norm(cand_dest - dest_pts, axis=1)
 
-        inlier_indices = np.where(distances < eps)[0]
-        if len(inlier_indices) > max_inliers:
-            max_inliers = len(inlier_indices)
-            inlier_indices = inlier_indices
+        test_indices = np.where(distances < eps)[0]
+        if len(test_indices) > max_inliers:
+            max_inliers = len(test_indices)
+            inlier_indices = test_indices
             best_H = cand_H
 
     # raise NotImplementedError
     return inlier_indices, best_H
-        # idx = np.random.choice(sample_indices, sample_size, replace=False)
-        # src_samples = src_pts[idx]
-        # dest_samples = dest_pts[idx]
 
-        # cand_H = computeHomography(src_samples, dest_samples) # compute candidate H
-
-        # error = calculate_error(src_pts, dest_pts, cand_H)
-
-        # # Count inliers
-        # inliers = []
-        # for i, elem in enumerate(error):
-        #     if elem[0] < eps and elem[1] < eps:
-        #         inliers.append(i)
-                
-        # # inliers = np.where(np.all(error[:, 0] < eps and error[:, 1] < eps))[0]
-        # # inliers = np.all(error < eps, axis=1)
-        # if len(inliers) > max_inliers:
-        #     max_inliers = len(inliers)
-        #     inlier_indices = inliers
-        #     best_H = cand_H
-    
-    # raise NotImplementedError
-    # return np.asarray(inlier_indices), best_H
-    
-        # dest_l2 = np.sqrt((dest_pts[:, 0] - cand_dest[:, 1])**2 + (dest_pts[:, 1] - cand_dest[:, 0])**2) # Take the L2 norm of each row
-        
-        # cand_indices = np.asarray(np.any(dest_l2 < eps, axis=0)).nonzero()
-        # # print(cand_indices)
-        # curr_count = np.sum(cand_indices)
-        
-        # if curr_count > max_inliers:
-        #     max_inliers = curr_count
-        #     best_H = cand_H
-        #     inlier_indices = cand_indices
-    # print(inlier_indices)
-    # return np.unique(inlier_indices), best_H
-
-
-def stitchImg(*args: Image.Image) -> Image.Image:
+def stitchImg(*args: np.ndarray) -> np.ndarray:
     '''
     Stitch a list of images.
     Arguments:
@@ -236,4 +199,49 @@ def stitchImg(*args: Image.Image) -> Image.Image:
     Returns:
         stitched_img: the stitched image.
     '''
+
+    '''
+    Start with two images
+    Run RANSAC to get best homography
+    Pass in inverse homography to backwardwarp
+    Overlap images based on points in common
+    Blend two images together
+    '''
+    from helpers import genSIFTMatches
+    
+    curr_img = args[0]
+
+    for img in args[1:]:
+        src_pts, dest_pts = genSIFTMatches(curr_img, img)
+        # genSIFT returns (y,x) not (x,y), so flip them around
+        src_pts, dest_pts = src_pts[:, [1, 0]], dest_pts[:, [1, 0]]
+        # Compute homography from the new image to the current image
+        inliers, H = runRANSAC(dest_pts, src_pts, 100, 1.2)
+        
+        # Find corner points to determine after-warped size of canvas
+        width, height = img.shape[1], img.shape[0]
+        corners = np.array([
+            [0         , 0        , 1], # top left
+            [0         , width - 1, 1], # top right
+            [height - 1, 0        , 1], # bottom left
+            [height - 1, width - 1, 1]  # bottom right
+        ])
+
+        homo_corners = H @ corners.T
+        homo_corners = homo_corners[:2, :] / homo_corners[2, :]
+
+        max_height = np.ceil(np.max(homo_corners[1, :]))
+        max_width = np.ceil(np.max(homo_corners[0, :]))
+
+        new_canvas_height = (curr_img.shape[0] + max_height).astype(np.int)
+        new_canvas_width = (curr_img.shape[1] + max_width).astype(np.int)
+        canvas_shape = (new_canvas_height, new_canvas_width, 3)
+        
+        blank_canvas = np.zeros(canvas_shape[:2])
+        curr_mask = blank_canvas[:curr_img.shape[0], :curr_img.shape[1]] + np.ones(curr_img.shape[:2])
+        warped_mask, warped = backwardWarpImg(img, np.linalg.inv(H), canvas_shape)
+        curr_img = blendImagePair(curr_img, curr_mask, warped, warped_mask, "blend")
+    
+    Image.fromarray(curr_img).show()
+
     raise NotImplementedError
