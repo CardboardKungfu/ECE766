@@ -119,14 +119,13 @@ def challenge1b():
     H_3x3 = computeHomography(portrait_pts, bg_pts)
 
     # Warp the portrait image
-    # dest_canvas_shape = bg_img.shape[:2]
-    dest_canvas_shape = bg_img.shape
+    dest_canvas_shape = bg_img.shape[:2]
     mask, dest_img = backwardWarpImg(portrait_img, np.linalg.inv(H_3x3), dest_canvas_shape)
     # mask should be of the type logical
-    mask = ~mask
+    mask = ~(mask > 0)
     # Superimpose the image
     # result = bg_img * np.stack([mask, mask, mask], axis=2) + dest_img
-    result = bg_img * mask + dest_img
+    result = bg_img * np.stack([mask, mask, mask], axis=2) + dest_img
     result = Image.fromarray((result * 255).astype(np.uint8))
     result.save('outputs/Van_Gogh_in_Osaka.png')
 
@@ -209,10 +208,10 @@ def challenge1e():
     img_right = np.array(Image.open('data/mountain_right.png')) / 255.0
 
     # You are free to change the order of input arguments
-    stitched_img = stitchImg(img_left, img_center, img_right)
+    stitched_img = stitchImg(img_center, img_left, img_right)
 
     # Save the stitched image
-    stitched_img = Image.fromarray((stitched_img * 255).astype(np.uint8))
+    # stitched_img = Image.fromarray((stitched_img * 255).astype(np.uint8))
     stitched_img.save('outputs/stitched_img.png')
 
 # Test image stitching

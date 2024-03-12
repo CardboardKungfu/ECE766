@@ -95,21 +95,25 @@ def backwardWarpImg(src_img: np.ndarray, destToSrc_H: np.ndarray, canvas_shape: 
         dest_mask: a mask indicating sourced pixels. pixels within the
             source image are 1, pixels outside are 0.
     '''
-    canvas = np.zeros(canvas_shape, dtype=src_img.dtype)
+    height_d, width_d = canvas_shape
+    canvas = np.zeros((height_d, width_d, 3), dtype=np.float32)
+    canvas_mask = np.zeros((height_d, width_d), dtype=np.uint8)
     src_height, src_width = src_img.shape[:2]
-    for x_d in range(canvas.shape[0]):
-        for y_d in range(canvas.shape[1]):
-            homo_coords = destToSrc_H @ np.array([x_d, y_d, 1]).reshape((3,1))
-            x_s, y_s, _ = (homo_coords / homo_coords[2]).flatten()
-            # Ignore if transformed pixel leads us outside of our original image
-            if x_s < 0 or y_s < 0 or x_s > src_height or y_s > src_width:
-                continue
-            canvas[x_d, y_d] = src_img[x_s.astype(int), y_s.astype(int)]
 
-    blank_mask = canvas > 0
+    for y_d in range(height_d):
+        for x_d in range(width_d):
+            homo_coords = destToSrc_H @ np.array([x_d, y_d, 1])
+            homo_coords /= homo_coords[2]
+            x_s, y_s = homo_coords[:2]
+            # Ignore if transformed pixel leads us outside of our original image
+            if 0 <= x_s < src_width and 0 <= y_s < src_height:
+                canvas[y_d, x_d] = src_img[int(y_s), int(x_s)]
+                canvas_mask[y_d, x_d] = 1
+
+    # blank_mask = canvas > 0
     
     # raise NotImplementedError
-    return blank_mask, canvas
+    return canvas_mask, canvas
 
 def blendImagePair(img1: np.ndarray, mask1: np.ndarray, img2: np.ndarray, mask2: np.ndarray, mode: str) -> np.ndarray:
     '''
@@ -124,24 +128,19 @@ def blendImagePair(img1: np.ndarray, mask1: np.ndarray, img2: np.ndarray, mask2:
         out_img: blended image.
     '''
     out_img = np.zeros(img1.shape)
+    mask1 = mask1 / 255
+    mask2 = mask2 / 255
 
     if mode == "overlay":
-        mask1 = mask1 > 0
-        mask2 = mask2 > 0
-        out_img = out_img + img1 * ~mask2[:, :, np.newaxis] + img2
-        out_img = out_img.astype(np.uint8)
-        
+        out_img = np.where(mask2[:, :, None] > 0, img2, img1)        
     elif mode == "blend":
-        mask1 = mask1 / 255
-        mask2 = mask2 / 255
-
         img1_weighted = ndimage.distance_transform_edt(mask1)
         img1_weighted[img1_weighted == 0] = 0.000001
 
         img2_weighted = ndimage.distance_transform_edt(mask2)
         img2_weighted[img2_weighted == 0] = 0.000001
 
-        image_blended = (img1 * img1_weighted[:, :, np.newaxis] + img2 * img2_weighted[:, :, np.newaxis]) / (img1_weighted + img2_weighted)[:, :, np.newaxis]
+        image_blended = (img1 * img1_weighted[..., np.newaxis] + img2 * img2_weighted[..., np.newaxis]) / (img1_weighted + img2_weighted)[..., np.newaxis]
         out_img = image_blended.astype(np.uint8)
     else:
         raise ValueError("Invalid blending mode. Choose 'overlay' or 'blend'.")
@@ -182,10 +181,10 @@ def runRANSAC(src_pts: np.ndarray, dest_pts: np.ndarray, ransac_n: int, eps: flo
 
         distances = np.linalg.norm(cand_dest - dest_pts, axis=1)
 
-        test_indices = np.where(distances < eps)[0]
-        if len(test_indices) > max_inliers:
-            max_inliers = len(test_indices)
-            inlier_indices = test_indices
+        inliers = np.where(distances < eps)[0]
+        if len(inliers) > max_inliers:
+            max_inliers = len(inliers)
+            inlier_indices = inliers
             best_H = cand_H
 
     # raise NotImplementedError
@@ -209,39 +208,45 @@ def stitchImg(*args: np.ndarray) -> np.ndarray:
     '''
     from helpers import genSIFTMatches
     
-    curr_img = args[0]
+    start_img = args[0]
 
-    for img in args[1:]:
-        src_pts, dest_pts = genSIFTMatches(curr_img, img)
+    for curr_img in args[1:]:
+        x_s, x_d = genSIFTMatches(curr_img, start_img)
         # genSIFT returns (y,x) not (x,y), so flip them around
-        src_pts, dest_pts = src_pts[:, [1, 0]], dest_pts[:, [1, 0]]
+        x_s, x_d = x_s[:, [1, 0]], x_d[:, [1, 0]]
         # Compute homography from the new image to the current image
-        inliers, H = runRANSAC(dest_pts, src_pts, 100, 1.2)
+        _, H = runRANSAC(x_s, x_d, 1000, 1.2)
         
         # Find corner points to determine after-warped size of canvas
-        width, height = img.shape[1], img.shape[0]
+        width, height = curr_img.shape[1], curr_img.shape[0]
         corners = np.array([
-            [0         , 0        , 1], # top left
-            [0         , width - 1, 1], # top right
-            [height - 1, 0        , 1], # bottom left
-            [height - 1, width - 1, 1]  # bottom right
+            [0        , 0         ],
+            [width - 1, 0         ],
+            [width - 1, height - 1],
+            [0        , height - 1]
         ])
 
-        homo_corners = H @ corners.T
-        homo_corners = homo_corners[:2, :] / homo_corners[2, :]
+        corners_warped = applyHomography(H, corners)
 
-        max_height = np.ceil(np.max(homo_corners[1, :]))
-        max_width = np.ceil(np.max(homo_corners[0, :]))
+        max_height = max(int(np.ceil(np.max(corners_warped[:, 1]))), start_img.shape[0])
+        max_width = max(int(np.ceil(np.max(corners_warped[:, 0]))), start_img.shape[1])
 
-        new_canvas_height = (curr_img.shape[0] + max_height).astype(np.int)
-        new_canvas_width = (curr_img.shape[1] + max_width).astype(np.int)
-        canvas_shape = (new_canvas_height, new_canvas_width, 3)
-        
-        blank_canvas = np.zeros(canvas_shape[:2])
-        curr_mask = blank_canvas[:curr_img.shape[0], :curr_img.shape[1]] + np.ones(curr_img.shape[:2])
-        warped_mask, warped = backwardWarpImg(img, np.linalg.inv(H), canvas_shape)
-        curr_img = blendImagePair(curr_img, curr_mask, warped, warped_mask, "blend")
+        canvas_shape = (max_height, max_width, 3)
+        curr_canvas = np.zeros(canvas_shape)
+        curr_canvas[:start_img.shape[0], :start_img.shape[1], :] = start_img
+
+        canvas_mask = np.zeros(canvas_shape[:2])
+        start_img_mask = np.ones((start_img.shape[0], start_img.shape[1]))
+        canvas_mask[:start_img.shape[0], :start_img.shape[1]] = start_img_mask
+
+        warped_mask, warped_img = backwardWarpImg(curr_img, np.linalg.inv(H), canvas_shape[:2])
+
+        canvas_mask = canvas_mask.squeeze()
+        img_blended = blendImagePair((curr_canvas * 255).astype(np.uint8), (canvas_mask * 255).astype(np.uint8), (warped_img * 255).astype(np.uint8), (warped_mask * 255).astype(np.uint8), mode='blend')
+        start_img = img_blended / 255.0
+        # start_img = img_blended
     
-    Image.fromarray(curr_img).show()
-
-    raise NotImplementedError
+    out_img = Image.fromarray(img_blended.astype(np.uint8))
+    # Image.fromarray(start_img.astype(np.uint8)).show()
+    # raise NotImplementedError
+    return out_img
