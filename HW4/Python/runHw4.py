@@ -217,7 +217,18 @@ def challenge1e():
 # Test image stitching
 def challenge1f():
     # Take three photos of a scene, and stitch them together to form a panorama
-    raise NotImplementedError
+    from hw4_challenge1 import stitchImg
+    # stitch three images
+    img_center = np.array(Image.open('data/makerspace-center.jpeg').convert('RGB')) / 255.0
+    img_left = np.array(Image.open('data/makerspace-left.jpeg').convert('RGB')) / 255.0
+    img_right = np.array(Image.open('data/makerspace-right.jpeg').convert('RGB')) / 255.0
+
+    # You are free to change the order of input arguments
+    stitched_img = stitchImg(img_center, img_left, img_right)
+
+    # Save the stitched image
+    stitched_img.save('outputs/makerspace_stitched_img.png')
+    # raise NotImplementedError
 
 if __name__ == '__main__':
     runHw4()

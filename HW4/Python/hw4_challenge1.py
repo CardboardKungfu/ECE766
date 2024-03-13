@@ -110,8 +110,6 @@ def backwardWarpImg(src_img: np.ndarray, destToSrc_H: np.ndarray, canvas_shape: 
                 canvas[y_d, x_d] = src_img[int(y_s), int(x_s)]
                 canvas_mask[y_d, x_d] = 1
 
-    # blank_mask = canvas > 0
-    
     # raise NotImplementedError
     return canvas_mask, canvas
 
@@ -169,7 +167,6 @@ def runRANSAC(src_pts: np.ndarray, dest_pts: np.ndarray, ransac_n: int, eps: flo
     best_H = None
     max_inliers = 0
     inlier_indices = None
-    # Go from nx2 -> nx3
     sample_indices = np.arange(len(src_pts))
     for _ in range(ransac_n):
         indices = np.random.choice(sample_indices, sample_size, replace=False)
@@ -209,14 +206,22 @@ def stitchImg(*args: np.ndarray) -> np.ndarray:
     from helpers import genSIFTMatches
     
     start_img = args[0]
+    index = (start_img == 0).all(axis=-1)
+    # Alter zero elements to a low value
+    start_img[index] = 1/255.0
 
     for curr_img in args[1:]:
+        
+        index = (curr_img == 0).all(axis=-1)
+        curr_img[index] = 1/255.0
+
         x_s, x_d = genSIFTMatches(curr_img, start_img)
         # genSIFT returns (y,x) not (x,y), so flip them around
         x_s, x_d = x_s[:, [1, 0]], x_d[:, [1, 0]]
         # Compute homography from the new image to the current image
-        _, H = runRANSAC(x_s, x_d, 1000, 1.2)
-        
+        _, H = runRANSAC(x_s, x_d, 300, 1)
+        # _, H = runRANSAC(x_s, x_d, 1000, 0.6)
+
         # Find corner points to determine after-warped size of canvas
         width, height = curr_img.shape[1], curr_img.shape[0]
         corners = np.array([
@@ -228,25 +233,37 @@ def stitchImg(*args: np.ndarray) -> np.ndarray:
 
         corners_warped = applyHomography(H, corners)
 
-        max_height = max(int(np.ceil(np.max(corners_warped[:, 1]))), start_img.shape[0])
-        max_width = max(int(np.ceil(np.max(corners_warped[:, 0]))), start_img.shape[1])
+        min_x = np.min(corners_warped[:, 0])
+        min_y = np.min(corners_warped[:, 1])
+        tl_x = 0 if min_x >= 0 else -min_x
+        tl_y = 0 if min_y >= 0 else -min_y
+        new_start_x = int(np.round(tl_x))
+        new_start_y = int(np.round(tl_y))
+        max_width  = max(int(np.ceil(np.max(corners_warped[:, 0]) + new_start_x)), start_img.shape[1] + new_start_x)
+        max_height = max(int(np.ceil(np.max(corners_warped[:, 1]) + new_start_y)), start_img.shape[0] + new_start_y)
 
         canvas_shape = (max_height, max_width, 3)
         curr_canvas = np.zeros(canvas_shape)
-        curr_canvas[:start_img.shape[0], :start_img.shape[1], :] = start_img
+        curr_canvas[new_start_y:start_img.shape[0] + new_start_y, new_start_x:start_img.shape[1] + new_start_x, :] = start_img
 
-        canvas_mask = np.zeros(canvas_shape[:2])
-        start_img_mask = np.ones((start_img.shape[0], start_img.shape[1]))
-        canvas_mask[:start_img.shape[0], :start_img.shape[1]] = start_img_mask
-
-        warped_mask, warped_img = backwardWarpImg(curr_img, np.linalg.inv(H), canvas_shape[:2])
+        canvas_mask = np.any(curr_canvas != 0, axis=-1).astype(int)
+        new_H = update_homography(H, new_start_x, new_start_y)
+        warped_mask, warped_img = backwardWarpImg(curr_img, np.linalg.inv(new_H), canvas_shape[:2])
 
         canvas_mask = canvas_mask.squeeze()
+
         img_blended = blendImagePair((curr_canvas * 255).astype(np.uint8), (canvas_mask * 255).astype(np.uint8), (warped_img * 255).astype(np.uint8), (warped_mask * 255).astype(np.uint8), mode='blend')
         start_img = img_blended / 255.0
-        # start_img = img_blended
+        index = (img_blended == 1).all(axis=-1)
+        img_blended[index] = 0
     
     out_img = Image.fromarray(img_blended.astype(np.uint8))
-    # Image.fromarray(start_img.astype(np.uint8)).show()
     # raise NotImplementedError
     return out_img
+
+def update_homography(H, tx, ty):
+    T = np.array([[1, 0, tx],
+                  [0, 1, ty],
+                  [0, 0, 1]])
+    new_H = np.dot(T, H)
+    return new_H
