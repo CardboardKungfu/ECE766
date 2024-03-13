@@ -213,6 +213,7 @@ def challenge1e():
     # Save the stitched image
     # stitched_img = Image.fromarray((stitched_img * 255).astype(np.uint8))
     stitched_img.save('outputs/stitched_img.png')
+    # stitched_img.show()
 
 # Test image stitching
 def challenge1f():
@@ -228,6 +229,7 @@ def challenge1f():
 
     # Save the stitched image
     stitched_img.save('outputs/makerspace_stitched_img.png')
+    # stitched_img.show()
     # raise NotImplementedError
 
 if __name__ == '__main__':

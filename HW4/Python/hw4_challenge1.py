@@ -239,7 +239,7 @@ def stitchImg(*args: np.ndarray) -> np.ndarray:
         tl_y = 0 if min_y >= 0 else -min_y
         new_start_x = int(np.round(tl_x))
         new_start_y = int(np.round(tl_y))
-        max_width  = max(int(np.ceil(np.max(corners_warped[:, 0]) + new_start_x)), start_img.shape[1] + new_start_x)
+        max_width  = max(int(np.ceil(np.max(corners_warped[:, 0]) + new_start_x)), start_img.shape[1] + new_start_x) 
         max_height = max(int(np.ceil(np.max(corners_warped[:, 1]) + new_start_y)), start_img.shape[0] + new_start_y)
 
         canvas_shape = (max_height, max_width, 3)
