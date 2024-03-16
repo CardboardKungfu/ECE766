@@ -61,7 +61,6 @@ def challenge1a():
     np.savez('outputs/sphere_properties.npz', center=center, radius=radius)
     print(f"Sphere center: {center}\nSphere radius: {radius}")
 
-
 # Compute the directions of light sources
 def challenge1b(): 
     from hw5_challenge1 import computeLightDirections
@@ -100,11 +99,11 @@ def challenge1d():
     mask = np.array(Image.open('outputs/vase_mask.png')).astype(bool)
 
     # Load the light directions
-    light_dirs_5x3 = np.load('outputs/light_dirs.mat')['light_dirs_5x3']
+    light_dirs_5x3 = np.load('outputs/light_dirs.npy')
 
     # Load the images of the vase
     vase_img_list = [
-        np.array(Image.open(f'vase{i}.png')) / 255.0
+        np.array(Image.open(f'data/vase{i}.png')) / 255.0
         for i in range(1, 6)
     ]
 
@@ -132,9 +131,9 @@ def challenge1d():
 
     fig, axs = plt.subplots(2, 1)
     axs[0].imshow(normal_map_img); axs[0].set_title('Normal map')
-    axs[1].imshow(albedo_img); axs[1].set_title('Albedo')
+    axs[1].imshow(albedo_img, cmap='gray'); axs[1].set_title('Albedo')
     plt.show()
-    print(f"Surface normals:\n{normals}")
+    # print(f"Surface normals:\n{normals}")
     
 
 # Demo (no submission required)
@@ -151,11 +150,13 @@ def demoSurfaceReconstruction():
     surf_img = reconstructSurf(normals, mask)
     surf_img = Image.fromarray((surf_img * 255).astype(np.uint8))
     surf_img.save('outputs/vase_surface.png')
+    surf_img = np.array(surf_img) / 255
 
     # Use the surf tool to visualize the 3D reconstruction
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     X, Y = np.arange(surf_img.shape[0]), np.arange(surf_img.shape[1])
+    X, Y = np.meshgrid(X, Y, indexing='ij')
     ax.plot_surface(X, Y, surf_img)
     plt.show()
 
