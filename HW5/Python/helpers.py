@@ -7,8 +7,10 @@ def reconstructSurf(normals, mask):
 
     # Compute surface gradients (p, q)
     eps = 1e-10
-    p_img = normals[:, :, 1] / (normals[:, :, 3] + eps)
-    q_img = normals[:, :, 2] / (normals[:, :, 3] + eps)
+    # p_img = normals[:, :, 1] / (normals[:, :, 3] + eps)
+    # q_img = normals[:, :, 2] / (normals[:, :, 3] + eps)
+    p_img = normals[:, :, 0] / (normals[:, :, 2] + eps)
+    q_img = normals[:, :, 1] / (normals[:, :, 2] + eps)
 
     # Take Fourier Transform of p and q
     fp_img = np.fft.fft2(p_img)
