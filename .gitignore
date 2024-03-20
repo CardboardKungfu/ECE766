@@ -2,3 +2,5 @@ formosa-et-al-2023-evaluating-the-impact-of-lane-marking-quality-on-the-operatio
 *.zip
 __pycache__/
 outputs/
+final-project/dataset
+final-project/cropped-dataset
