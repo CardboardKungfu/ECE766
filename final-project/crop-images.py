@@ -1,6 +1,7 @@
 from PIL import Image, ImageDraw
 import json
 import numpy as np
+from scipy import ndimage
 
 coco_json_path = "dataset\\_annotations.coco.json"
 with open(coco_json_path, "r") as file:
@@ -26,6 +27,9 @@ for i, annotation in enumerate(annotations):
             for segment in segmentation:
                 draw.polygon(segment, fill=255)
             
+            padded_mask = np.array(mask)
+            padded_mask = ndimage.binary_dilation(padded_mask, iterations=5)
+            padded_mask = Image.fromarray(padded_mask)
             # Paste the object onto the black background
-            background.paste(img_PIL, mask=mask)
-            background.save(f"cropped-dataset\\cropped_{filename}")
+            background.paste(img_PIL, mask=padded_mask)
+            background.save(f"test_mask\\cropped_{filename}")
