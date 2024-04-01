@@ -2,7 +2,8 @@ from PIL import Image
 import numpy as np
 from typing import Union, Tuple, List
 
-from scipy import ndimage
+from scipy import signal
+
 
 def generateIndexMap(gray_list: List[np.ndarray], w_size: int) -> np.ndarray:
     # Generate an index map for the refocusing application
@@ -14,27 +15,28 @@ def generateIndexMap(gray_list: List[np.ndarray], w_size: int) -> np.ndarray:
     #               index_map(i, j) is the index of the image that is in focus
     #               at pixel (i, j)
     
-    height, width = gray_list[0].shape
-    index_map = np.empty((height, width))
-    gray_stack = np.stack(gray_list, axis=2)
+    laplace_ker = np.array([
+            [0, -1, 0],
+            [-1, 4, -1],
+            [0, -1, 0]
+        ])
+    
+    lap_imgs = [np.square(signal.convolve2d(img, laplace_ker, mode='full')) for img in gray_list]
+    print("Finish First Convolution")
+    lap_imgs = [signal.convolve2d(img, np.ones((w_size, w_size)), mode='full') for img in lap_imgs]
+    print("Finish Second Convolution")
 
-    # for i, j in np.ndindex((height, width)):
-    for j in range(width):
-        for i in range(height):
-            # Clip window so it doesn't fall out of bounds
-            left = np.clip(i - w_size, 0, width - 1)
-            right = np.clip(i + w_size, 0, width - 1)
-            top = np.clip(j - w_size, 0, height - 1)
-            bottom = np.clip(j + w_size, 0, height - 1)
-            
-            # Check if window size is non-zero
-            if left < right and top < bottom:
-                # Slice the ixj column of the 3d stack
-                window_column = gray_stack[left:right, top:bottom, :]
-                
-                # Find the index of the maximum laplacian value over each of the layers in our window column
-                # index_map[i, j] = np.argmax(np.apply_over_axes(ndimage.laplace, window_column, [0,1]))
-                index_map[i, j] = np.argmax(np.apply_along_axis(ndimage.laplace, axis=2, arr=window_column))
+    lap_stack = np.stack(lap_imgs, axis=2)
+    index_map = np.empty(lap_stack.shape[:2])
+
+    # print(lap_stack.shape)
+    # print(index_map.shape)
+
+    height, width = index_map.shape
+    # raise NotImplementedError
+    for i in range(height):
+        for j in range(width):
+            index_map[i, j] = np.argmax(lap_stack[i, j, :])
 
     # raise NotImplementedError
     return index_map
