@@ -22,11 +22,11 @@ def generateIndexMap(gray_list: List[np.ndarray], w_size: int) -> np.ndarray:
         ])
     ones_ker = np.ones((w_size, w_size))
 
-    lap_imgs = [np.square(signal.convolve2d(img, laplace_ker, mode='same')) for img in gray_list]
-    lap_imgs = [signal.convolve2d(img, ones_ker, mode='same') for img in lap_imgs]
+    lap_imgs = [np.square(signal.convolve2d(img, laplace_ker, mode='same', boundary='symm')) for img in gray_list]
+    lap_imgs = [signal.convolve2d(img, ones_ker, mode='same', boundary='symm') for img in lap_imgs]
 
     avg_ker = ones_ker / np.sum(ones_ker)
-    lap_imgs = [signal.convolve2d(img, avg_ker, mode='same') for img in lap_imgs]
+    lap_imgs = [signal.convolve2d(img, avg_ker, mode='same', boundary='symm') for img in lap_imgs]
 
     lap_stack = np.stack(lap_imgs, axis=2)
     index_map = np.empty(lap_stack.shape[:2])
@@ -78,11 +78,12 @@ def refocusApp(rgb_list: List[np.ndarray], depth_map: np.ndarray) -> None:
         point = plt.ginput(1, timeout=-1, show_clicks=False)
         if not point:  # If user clicks outside the image, exit the loop
             break
-
+            
+        print(point)
         scene_point = tuple(map(int, point[0]))
 
         # Check if the scene point falls within the image dimensions
-        if (0 <= scene_point[0] < depth_map.shape[0]) and (0 <= scene_point[1] < depth_map.shape[1]):
+        if (0 <= scene_point[0] < depth_map.shape[1]) and (0 <= scene_point[1] < depth_map.shape[0]):
             # Refocus the image to the chosen scene point
             i, j = scene_point
             focal_index = depth_map[j, i]
