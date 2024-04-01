@@ -20,23 +20,18 @@ def generateIndexMap(gray_list: List[np.ndarray], w_size: int) -> np.ndarray:
             [-1, 4, -1],
             [0, -1, 0]
         ])
-    
-    lap_imgs = [np.square(signal.convolve2d(img, laplace_ker, mode='full')) for img in gray_list]
-    print("Finish First Convolution")
-    lap_imgs = [signal.convolve2d(img, np.ones((w_size, w_size)), mode='full') for img in lap_imgs]
-    print("Finish Second Convolution")
+    ones_ker = np.ones((w_size, w_size))
+
+    lap_imgs = [np.square(signal.convolve2d(img, laplace_ker, mode='same')) for img in gray_list]
+    lap_imgs = [signal.convolve2d(img, ones_ker, mode='same') for img in lap_imgs]
+
+    avg_ker = ones_ker / np.sum(ones_ker)
+    lap_imgs = [signal.convolve2d(img, avg_ker, mode='same') for img in lap_imgs]
 
     lap_stack = np.stack(lap_imgs, axis=2)
     index_map = np.empty(lap_stack.shape[:2])
 
-    # print(lap_stack.shape)
-    # print(index_map.shape)
-
-    height, width = index_map.shape
-    # raise NotImplementedError
-    for i in range(height):
-        for j in range(width):
-            index_map[i, j] = np.argmax(lap_stack[i, j, :])
+    index_map = np.argmax(lap_stack, axis=2)
 
     # raise NotImplementedError
     return index_map
@@ -53,7 +48,8 @@ def loadFocalStack(focal_stack_dir: str) -> Tuple[List[np.ndarray], List[np.ndar
     import glob
     rgb_list = []
     gray_list = []
-    for filename in glob.glob(focal_stack_dir + '/*.jpg'): #assuming gif
+    for i in range(25):
+        filename = f"data\\stack\\frame{i+1}.jpg"
         img = Image.open(filename)
         rgb_list.append(np.array(img))
         gray_list.append(np.array(img.convert('L')))
