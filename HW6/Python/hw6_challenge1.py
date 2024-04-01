@@ -45,7 +45,6 @@ def loadFocalStack(focal_stack_dir: str) -> Tuple[List[np.ndarray], List[np.ndar
     #   rgb_list - List of RGB images for varying focal lengths
     #   gray_list - List of gray-scale images for varying focal lengths
     
-    import glob
     rgb_list = []
     gray_list = []
     for i in range(25):
@@ -58,11 +57,44 @@ def loadFocalStack(focal_stack_dir: str) -> Tuple[List[np.ndarray], List[np.ndar
     return (rgb_list, gray_list)
 
 
-def refocusApp(rgb_list: List[np.ndarray], depth_map: np.ndarray) -> None:
+# def refocusApp(rgb_list: List[np.ndarray], depth_map: np.ndarray) -> None:
     # Refocusing application
     # Input:
     #   rgb_list - List of RGB images for varying focal lengths
     #   depth_map - mxn index map
     #               depth_map(i, j) is the index of the image that is in focus
     #               at pixel (i, j)
-    raise NotImplementedError
+
+    # raise NotImplementedError
+
+def refocusApp(rgb_list: List[np.ndarray], depth_map: np.ndarray) -> None:
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    im = ax.imshow(rgb_list[0])  # Display the first image in the list
+
+    while True:
+        # Ask user to choose a scene point
+        point = plt.ginput(1, timeout=-1, show_clicks=False)
+        if not point:  # If user clicks outside the image, exit the loop
+            break
+
+        scene_point = tuple(map(int, point[0]))
+
+        # Check if the scene point falls within the image dimensions
+        if (0 <= scene_point[0] < depth_map.shape[0]) and (0 <= scene_point[1] < depth_map.shape[1]):
+            # Refocus the image to the chosen scene point
+            i, j = scene_point
+            focal_index = depth_map[j, i]
+
+            # Return the image focused at the scene point
+            refocused_image = rgb_list[int(focal_index)]
+
+            # Update the displayed image
+            im.set_data(refocused_image)
+            plt.draw()
+            plt.pause(0.1)  # Pause to update the plot
+        else:
+            print("Selected point is outside the image.")
+
+    plt.close()
