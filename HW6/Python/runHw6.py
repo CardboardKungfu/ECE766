@@ -41,7 +41,7 @@ def honesty():
     from signAcademicHonestyPolicy import sign_academic_honesty_policy
     # Type your full name and uni (both in string) to state your agreement 
     # to the Code of Academic Integrity.
-    sign_academic_honesty_policy('Peter Parker', 'pp117')
+    sign_academic_honesty_policy('Jed Pulley', '9085816834')
 
 ###########################################################################
 # Tests for Challenge 1: Refocusing Application
