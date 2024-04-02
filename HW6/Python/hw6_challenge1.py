@@ -57,16 +57,6 @@ def loadFocalStack(focal_stack_dir: str) -> Tuple[List[np.ndarray], List[np.ndar
     return (rgb_list, gray_list)
 
 
-# def refocusApp(rgb_list: List[np.ndarray], depth_map: np.ndarray) -> None:
-    # Refocusing application
-    # Input:
-    #   rgb_list - List of RGB images for varying focal lengths
-    #   depth_map - mxn index map
-    #               depth_map(i, j) is the index of the image that is in focus
-    #               at pixel (i, j)
-
-    # raise NotImplementedError
-
 def refocusApp(rgb_list: List[np.ndarray], depth_map: np.ndarray) -> None:
     import matplotlib.pyplot as plt
 
