@@ -14,7 +14,7 @@ def filter_img(path):
     upper_thresh = np.array([10,255,255])
     return cv2.inRange(hsv_image, lower_thresh, upper_thresh)
 
-def edge_detection(filtered_img):    
+def edges(filtered_img):    
     median = cv2.medianBlur(filtered_img, 5)
     closed = cv2.morphologyEx(median, cv2.MORPH_CLOSE, (3, 3))
     closed = cv2.morphologyEx(median, cv2.MORPH_CLOSE, (5, 5))
@@ -30,8 +30,8 @@ for path in paths:
     filtered = filter_img(path)
     cv2.imshow('Filtered Image', filtered)
 
-    sobel = edge_detection(filtered)
-    cv2.imshow('Canny Image', sobel)
+    edge_img = edges(filtered)
+    cv2.imshow('Canny Image', edge_img)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
