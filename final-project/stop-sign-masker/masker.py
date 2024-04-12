@@ -30,8 +30,8 @@ for path in paths:
     filtered = filter_img(path)
     cv2.imshow('Filtered Image', filtered)
 
-    Sobel = edge_detection(filtered)
-    cv2.imshow('Sobel Image', Sobel)
+    sobel = edge_detection(filtered)
+    cv2.imshow('Sobel Image', sobel)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
