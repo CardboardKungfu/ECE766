@@ -33,7 +33,7 @@ def generateIndexMap(gray_list: List[np.ndarray], w_size: int) -> np.ndarray:
     index_map = np.empty(lap_stack.shape[:2])
 
     index_map = np.argmax(lap_stack, axis=2)
-    index_map = median_filter(index_map, size=15)
+    index_map = median_filter(index_map, size=19)
 
     # raise NotImplementedError
     return index_map
